@@ -1,0 +1,4 @@
+- Program (text + data) starts at small positive address
+- Heap starts above program
+- Stack starts at highest address and grows downward
+- System addresses are negative
