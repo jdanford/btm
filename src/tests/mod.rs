@@ -1,3 +1,2 @@
-#[test]
-fn tryte_negate() {
-}
+mod trit;
+mod tryte;
