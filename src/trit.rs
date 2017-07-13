@@ -22,6 +22,30 @@ impl Trit {
     pub const NEG: Trit = Trit(Trit::BITS_NEG);
 }
 
+static BITS_TO_INT: [i16; 3] = [0, 1, -1];
+
+impl Into<i16> for Trit {
+    fn into(self) -> i16 {
+        BITS_TO_INT[self.0 as usize]
+    }
+}
+
+static UINT_TO_BITS: [u16; 3] = [Trit::BITS_NEG, Trit::BITS_ZERO, Trit::BITS_POS];
+
+impl TryFrom<i16> for Trit {
+    type Error = ();
+
+    fn try_from(n: i16) -> Result<Self, Self::Error> {
+        let uint = (n + 1) as usize;
+        if uint < 3 {
+            let bits = UINT_TO_BITS[uint];
+            Ok(Trit(bits))
+        } else {
+            Err(())
+        }
+    }
+}
+
 static BITS_TO_CHAR: [char; 3] = [Trit::CHAR_ZERO, Trit::CHAR_POS, Trit::CHAR_NEG];
 
 impl Into<char> for Trit {
@@ -41,30 +65,6 @@ impl TryFrom<char> for Trit {
 
     fn try_from(c: char) -> Result<Self, Self::Error> {
         if let Some(&bits) = CHAR_TO_BITS.get(&c) {
-            Ok(Trit(bits))
-        } else {
-            Err(())
-        }
-    }
-}
-
-static BITS_TO_INT: [i16; 3] = [0, 1, -1];
-
-impl Into<i16> for Trit {
-    fn into(self) -> i16 {
-        BITS_TO_INT[self.0 as usize]
-    }
-}
-
-static SINT_TO_BITS: [u16; 3] = [Trit::BITS_NEG, Trit::BITS_ZERO, Trit::BITS_POS];
-
-impl TryFrom<i16> for Trit {
-    type Error = ();
-
-    fn try_from(n: i16) -> Result<Self, Self::Error> {
-        let sint = (n + 1) as usize;
-        if sint < 3 {
-            let bits = SINT_TO_BITS[sint];
             Ok(Trit(bits))
         } else {
             Err(())

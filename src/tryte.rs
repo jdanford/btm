@@ -20,7 +20,7 @@ impl Tryte {
 
     pub fn set_trit(self, i: usize, trit: Trit) -> Self {
         let shf = (i as u16) * 2;
-        let bits = self.0 | (trit.0 << shf);
+        let bits = (self.0 | (trit.0 << shf)) & Tryte::BITMASK;
         Tryte(bits)
     }
 }
@@ -47,10 +47,8 @@ impl TryFrom<i16> for Tryte {
             return Err(())
         }
 
-
         let negative = n < 0;
         let mut n = n.abs();
-
         let mut tryte = Tryte(Trit::BITS_ZERO);
 
         for i in 0..6 {
@@ -76,6 +74,7 @@ impl Neg for Tryte {
     type Output = Tryte;
 
     fn neg(self) -> Self::Output {
-        Tryte(self.0 ^ Tryte::BITMASK)
+        let bits = self.0 ^ Tryte::BITMASK;
+        Tryte(bits)
     }
 }
