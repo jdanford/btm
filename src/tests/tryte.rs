@@ -23,7 +23,9 @@ fn tryte_negate() {
 }
 
 #[test]
-fn tryte_double_negate() {
-    let tryte = Tryte::try_from(1).unwrap();
-    assert_eq!(tryte, --tryte);
+fn tryte_add() {
+    let tryte_pos = Tryte::try_from(1).unwrap();
+    let tryte_neg = Tryte::try_from(-1).unwrap();
+    let tryte_sum = tryte_pos + tryte_neg;
+    assert_eq!(0i16, tryte_sum.into());
 }

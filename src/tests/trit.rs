@@ -10,7 +10,7 @@ fn trit_into_i16() {
 
 #[test]
 fn trit_from_i16() {
-    let trit = Trit::try_from(1i16).unwrap();
+    let trit = Trit::try_from(1).unwrap();
     assert_eq!(Trit::BITS_POS, trit.0);
 }
 
@@ -19,10 +19,4 @@ fn trit_negate() {
     let trit_pos = Trit::try_from(1).unwrap();
     let trit_neg = Trit::try_from(-1).unwrap();
     assert_eq!(trit_pos, -trit_neg);
-}
-
-#[test]
-fn trit_double_negate() {
-    let trit = Trit::try_from(1).unwrap();
-    assert_eq!(trit, --trit);
 }

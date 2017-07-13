@@ -3,8 +3,45 @@ use std::ops::Neg;
 
 use phf;
 
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Trit(pub u16);
+
+lazy_static! {
+    static ref TRITS_TO_SUM_CARRY: [(u16, u16); 43] = {
+        let mut table = [(0, 0); 43];
+
+        table[0b00_00_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b00_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b00_00_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b00_01_00] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b00_01_01] = (Trit::BITS_NEG, Trit::BITS_POS);
+        table[0b00_01_10] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b00_10_00] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b00_10_01] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b00_10_10] = (Trit::BITS_POS, Trit::BITS_NEG);
+        table[0b01_00_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b01_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b01_00_10] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b01_01_00] = (Trit::BITS_NEG, Trit::BITS_POS);
+        table[0b01_01_01] = (Trit::BITS_ZERO, Trit::BITS_POS);
+        table[0b01_01_10] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b01_10_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b01_10_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b01_10_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b10_00_00] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b10_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b10_00_10] = (Trit::BITS_POS, Trit::BITS_NEG);
+        table[0b10_01_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
+        table[0b10_01_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
+        table[0b10_01_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b10_10_00] = (Trit::BITS_POS, Trit::BITS_NEG);
+        table[0b10_10_01] = (Trit::BITS_NEG, Trit::BITS_ZERO);
+        table[0b10_10_10] = (Trit::BITS_ZERO, Trit::BITS_NEG);
+
+        table
+    };
+}
+
 
 impl Trit {
     pub const BITMASK: u16 = 0b11;
@@ -20,6 +57,12 @@ impl Trit {
     pub const ZERO: Trit = Trit(Trit::BITS_ZERO);
     pub const POS: Trit = Trit(Trit::BITS_POS);
     pub const NEG: Trit = Trit(Trit::BITS_NEG);
+
+    pub fn add_with_carry(self, other: Trit, carry: Trit) -> (Trit, Trit) {
+        let i = (self.0 << 4 | other.0 << 2 | carry.0) as usize;
+        let (sum, carry) = TRITS_TO_SUM_CARRY[i];
+        (Trit(sum), Trit(carry))
+    }
 }
 
 static BITS_TO_INT: [i16; 3] = [0, 1, -1];
