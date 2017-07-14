@@ -7,65 +7,68 @@ use phf;
 pub struct Trit(pub u16);
 
 lazy_static! {
-    static ref TRITS_TO_SUM_CARRY: [(u16, u16); 43] = {
-        let mut table = [(0, 0); 43];
+    static ref TRIT3_TO_SUM_AND_CARRY: [(u16, u16); 64] = {
+        let mut table = [(0, 0); 64];
 
-        table[0b00_00_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b00_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b00_00_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b00_01_00] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b00_01_01] = (Trit::BITS_NEG, Trit::BITS_POS);
-        table[0b00_01_10] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b00_10_00] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b00_10_01] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b00_10_10] = (Trit::BITS_POS, Trit::BITS_NEG);
-        table[0b01_00_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b01_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b01_00_10] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b01_01_00] = (Trit::BITS_NEG, Trit::BITS_POS);
-        table[0b01_01_01] = (Trit::BITS_ZERO, Trit::BITS_POS);
-        table[0b01_01_10] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b01_10_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b01_10_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b01_10_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b10_00_00] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b10_00_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b10_00_10] = (Trit::BITS_POS, Trit::BITS_NEG);
-        table[0b10_01_00] = (Trit::BITS_ZERO, Trit::BITS_ZERO);
-        table[0b10_01_01] = (Trit::BITS_POS, Trit::BITS_ZERO);
-        table[0b10_01_10] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b10_10_00] = (Trit::BITS_POS, Trit::BITS_NEG);
-        table[0b10_10_01] = (Trit::BITS_NEG, Trit::BITS_ZERO);
-        table[0b10_10_10] = (Trit::BITS_ZERO, Trit::BITS_NEG);
+        table[0b00_00_00] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b00_00_01] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b00_00_11] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b00_01_00] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b00_01_01] = (Trit::BIN_NEG, Trit::BIN_POS);
+        table[0b00_01_11] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b00_11_00] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b00_11_01] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b00_11_11] = (Trit::BIN_POS, Trit::BIN_NEG);
+        table[0b01_00_00] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b01_00_01] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b01_00_11] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b01_01_00] = (Trit::BIN_NEG, Trit::BIN_POS);
+        table[0b01_01_01] = (Trit::BIN_ZERO, Trit::BIN_POS);
+        table[0b01_01_11] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b01_11_00] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b01_11_01] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b01_11_11] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b11_00_00] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b11_00_01] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b11_00_11] = (Trit::BIN_POS, Trit::BIN_NEG);
+        table[0b11_01_00] = (Trit::BIN_ZERO, Trit::BIN_ZERO);
+        table[0b11_01_01] = (Trit::BIN_POS, Trit::BIN_ZERO);
+        table[0b11_01_11] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b11_11_00] = (Trit::BIN_POS, Trit::BIN_NEG);
+        table[0b11_11_01] = (Trit::BIN_NEG, Trit::BIN_ZERO);
+        table[0b11_11_11] = (Trit::BIN_ZERO, Trit::BIN_NEG);
 
         table
     };
 }
 
-
 impl Trit {
     pub const BITMASK: u16 = 0b11;
 
-    pub const BITS_ZERO: u16 = 0b00;
-    pub const BITS_POS: u16 = 0b01;
-    pub const BITS_NEG: u16 = 0b10;
+    pub const BIN_ZERO: u16 = 0b00;
+    pub const BIN_POS: u16 = 0b01;
+    pub const BIN_NEG: u16 = 0b11;
 
     pub const CHAR_ZERO: char = '0';
     pub const CHAR_POS: char = '1';
     pub const CHAR_NEG: char = 'T';
 
-    pub const ZERO: Trit = Trit(Trit::BITS_ZERO);
-    pub const POS: Trit = Trit(Trit::BITS_POS);
-    pub const NEG: Trit = Trit(Trit::BITS_NEG);
+    pub const ZERO: Trit = Trit(Trit::BIN_ZERO);
+    pub const POS: Trit = Trit(Trit::BIN_POS);
+    pub const NEG: Trit = Trit(Trit::BIN_NEG);
+
+    pub fn negation_bits(self) -> u16 {
+        self.0 << 1 & Trit::BITMASK
+    }
 
     pub fn add_with_carry(self, other: Trit, carry: Trit) -> (Trit, Trit) {
         let i = (self.0 << 4 | other.0 << 2 | carry.0) as usize;
-        let (sum, carry) = TRITS_TO_SUM_CARRY[i];
+        let (sum, carry) = TRIT3_TO_SUM_AND_CARRY[i];
         (Trit(sum), Trit(carry))
     }
 }
 
-static BITS_TO_INT: [i16; 3] = [0, 1, -1];
+static BITS_TO_INT: [i16; 4] = [0, 1, 0, -1];
 
 impl Into<i16> for Trit {
     fn into(self) -> i16 {
@@ -73,7 +76,7 @@ impl Into<i16> for Trit {
     }
 }
 
-static UINT_TO_BITS: [u16; 3] = [Trit::BITS_NEG, Trit::BITS_ZERO, Trit::BITS_POS];
+static UINT_TO_BITS: [u16; 3] = [Trit::BIN_NEG, Trit::BIN_ZERO, Trit::BIN_POS];
 
 impl TryFrom<i16> for Trit {
     type Error = ();
@@ -97,10 +100,11 @@ impl Into<char> for Trit {
     }
 }
 
-static CHAR_TO_BITS: phf::Map<char, u16> = phf_map! {
-    'T' => Trit::BITS_NEG,
-    '0' => Trit::BITS_ZERO,
-    '1' => Trit::BITS_POS,
+static CHAR_TO_BITS: phf::Map<char, u16> =
+    phf_map! {
+    'T' => Trit::BIN_NEG,
+    '0' => Trit::BIN_ZERO,
+    '1' => Trit::BIN_POS,
 };
 
 impl TryFrom<char> for Trit {
@@ -119,6 +123,7 @@ impl Neg for Trit {
     type Output = Trit;
 
     fn neg(self) -> Self::Output {
-        Trit(self.0 ^ Trit::BITMASK)
+        let bits = self.0 ^ self.negation_bits();
+        Trit(bits)
     }
 }

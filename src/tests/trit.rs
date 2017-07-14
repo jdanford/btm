@@ -4,14 +4,14 @@ use trit::Trit;
 
 #[test]
 fn trit_into_i16() {
-    let trit = Trit(Trit::BITS_POS);
+    let trit = Trit(Trit::BIN_POS);
     assert_eq!(1i16, trit.into());
 }
 
 #[test]
 fn trit_from_i16() {
     let trit = Trit::try_from(1).unwrap();
-    assert_eq!(Trit::BITS_POS, trit.0);
+    assert_eq!(Trit::BIN_POS, trit.0);
 }
 
 #[test]
