@@ -1,4 +1,3 @@
-#![feature(associated_consts)]
 #![feature(try_from)]
 #![feature(plugin)]
 #![plugin(phf_macros)]
