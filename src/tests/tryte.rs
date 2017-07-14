@@ -37,3 +37,11 @@ fn tryte_add() {
     let tryte_sum = tryte_pos + tryte_neg;
     assert_eq!(0i16, tryte_sum.into());
 }
+
+#[test]
+fn tryte_display() {
+    let tryte_pos = Tryte::try_from(64).unwrap();
+    let tryte_neg = Tryte::try_from(-64).unwrap();
+    let tryte_sum = tryte_pos + tryte_neg;
+    assert_eq!(0i16, tryte_sum.into());
+}

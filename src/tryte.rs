@@ -31,15 +31,15 @@ impl Tryte {
     }
 
     pub fn add_with_carry(self, other: Tryte, carry: Trit) -> (Tryte, Trit) {
-        let mut carry = carry;
         let mut tryte = Tryte::default();
+        let mut carry = carry;
 
         for i in 0..6 {
             let a = self.get_trit(i);
             let b = other.get_trit(i);
             let (c, _carry) = a.add_with_carry(b, carry);
-            carry = _carry;
             tryte = tryte.set_trit(i, c);
+            carry = _carry;
         }
 
         (tryte, carry)

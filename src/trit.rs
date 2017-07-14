@@ -92,7 +92,12 @@ impl TryFrom<i16> for Trit {
     }
 }
 
-static BITS_TO_CHAR: [char; 3] = [Trit::CHAR_ZERO, Trit::CHAR_POS, Trit::CHAR_NEG];
+static BITS_TO_CHAR: [char; 4] = [
+    Trit::CHAR_ZERO,
+    Trit::CHAR_POS,
+    Trit::CHAR_ZERO,
+    Trit::CHAR_NEG,
+];
 
 impl Into<char> for Trit {
     fn into(self) -> char {
