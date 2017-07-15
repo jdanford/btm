@@ -1,21 +1,27 @@
 use std::convert::{TryFrom, TryInto};
 use std::cmp::Ordering;
+use std::fmt;
 use std::ops;
 use std::ops::Mul;
+use std::str::FromStr;
 
 use trit;
 use trit::Trit;
+use hyte::{char_from_hyte, try_hyte_from_char};
 
 pub const MIN_VALUE: i16 = -364;
 pub const MAX_VALUE: i16 = 364;
 
 const BITMASK: u16 = 0b11_11_11_11_11_11;
+const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
 pub struct Tryte(pub u16);
 
 pub const ZERO: Tryte = Tryte(trit::BIN_ZERO);
+
+pub const HYTE_BIT_WIDTH: usize = 6;
 
 impl Tryte {
     pub fn get_trit(self, i: usize) -> Trit {
@@ -24,10 +30,18 @@ impl Tryte {
         Trit(bits)
     }
 
-    pub fn set_trit(self, i: usize, trit: Trit) -> Self {
+    pub fn set_trit(self, i: usize, trit: Trit) -> Tryte {
         let shf = (i as u16) * 2;
         let bits = (self.0 | trit.0 << shf) & BITMASK;
         Tryte(bits)
+    }
+
+    pub fn low(self) -> u8 {
+        self.0 as u8 & HYTE_BITMASK
+    }
+
+    pub fn high(self) -> u8 {
+        (self.0 >> HYTE_BIT_WIDTH) as u8 & HYTE_BITMASK
     }
 
     fn negation_bits(self) -> u16 {
@@ -55,6 +69,36 @@ impl Tryte {
         }
 
         (tryte, carry)
+    }
+
+    pub fn display_hyte(self) -> HyteDisplay {
+        HyteDisplay(self)
+    }
+
+    pub fn display_trit(self) -> TritDisplay {
+        TritDisplay(self)
+    }
+
+    fn from_hyte_str(s: &str) -> Result<Tryte, ()> {
+        if s.len() != 2 {
+            return Err(());
+        }
+
+        let mut chars = s.chars();
+        let high_char = chars.next().ok_or(())?;
+        let low_char = chars.next().ok_or(())?;
+        let high_hyte = try_hyte_from_char(high_char)?;
+        let low_hyte = try_hyte_from_char(low_char)?;
+        let tryte = (low_hyte, high_hyte).into();
+        Ok(tryte)
+    }
+
+    fn from_trit_str(s: &str) -> Result<Tryte, ()> {
+        if s.len() != 6 {
+            return Err(());
+        }
+
+        Ok(ZERO)
     }
 }
 
@@ -87,6 +131,19 @@ impl TryInto<Trit> for Tryte {
         } else {
             Ok(Trit(bits))
         }
+    }
+}
+
+impl From<(u8, u8)> for Tryte {
+    fn from((low_hyte, high_hyte): (u8, u8)) -> Tryte {
+        let bits = (high_hyte as u16) << HYTE_BIT_WIDTH | (low_hyte as u16);
+        Tryte(bits)
+    }
+}
+
+impl Into<(u8, u8)> for Tryte {
+    fn into(self) -> (u8, u8) {
+        (self.low(), self.high())
     }
 }
 
@@ -192,5 +249,32 @@ impl ops::Add for Tryte {
     fn add(self, rhs: Tryte) -> Self::Output {
         let (sum, _) = self.add_with_carry(rhs, trit::ZERO);
         sum
+    }
+}
+
+struct HyteDisplay(Tryte);
+
+impl fmt::Display for HyteDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let tryte = self.0;
+        let (low_hyte, high_hyte) = tryte.into();
+        let low_char = char_from_hyte(low_hyte);
+        let high_char = char_from_hyte(high_hyte);
+        write!(f, "{}{}", low_char, high_char)
+    }
+}
+
+struct TritDisplay(Tryte);
+
+impl fmt::Display for TritDisplay {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for i in (0..6).rev() {
+            let tryte = self.0;
+            let trit = tryte.get_trit(i);
+            let c: char = trit.into();
+            write!(f, "{}", c)?;
+        }
+
+        Ok(())
     }
 }
