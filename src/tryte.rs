@@ -9,10 +9,10 @@ use trit::Trit;
 pub const MIN_VALUE: i16 = -364;
 pub const MAX_VALUE: i16 = 364;
 
-const BITMASK: u16 = 0b00_00_11_11_11_11_11_11;
-const SIGN_BITMASK: u16 = 0b00_00_10_10_10_10_10_10;
+const BITMASK: u16 = 0b11_11_11_11_11_11;
+const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
 pub struct Tryte(pub u16);
 
 pub const ZERO: Tryte = Tryte(trit::BIN_ZERO);
@@ -80,7 +80,7 @@ impl From<Trit> for Tryte {
 impl TryInto<Trit> for Tryte {
     type Error = ();
 
-    fn try_into(self: Self) -> Result<Trit, Self::Error> {
+    fn try_into(self) -> Result<Trit, Self::Error> {
         let bits = self.0;
         if bits == trit::BIN_INVALID || bits > trit::BIN_NEG {
             Err(())

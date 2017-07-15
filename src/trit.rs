@@ -123,7 +123,7 @@ fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
     (a.0 << 4 | b.0 << 2 | c.0) as usize
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord)]
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
 pub struct Trit(pub u16);
 
 pub const ZERO: Trit = Trit(BIN_ZERO);
