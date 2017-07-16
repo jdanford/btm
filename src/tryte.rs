@@ -3,7 +3,6 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::ops;
 use std::ops::Mul;
-use std::str::FromStr;
 
 use trit;
 use trit::Trit;
@@ -71,15 +70,15 @@ impl Tryte {
         (tryte, carry)
     }
 
-    pub fn display_hyte(self) -> HyteDisplay {
+    pub fn display_hytes(self) -> HyteDisplay {
         HyteDisplay(self)
     }
 
-    pub fn display_trit(self) -> TritDisplay {
+    pub fn display_trits(self) -> TritDisplay {
         TritDisplay(self)
     }
 
-    fn from_hyte_str(s: &str) -> Result<Tryte, ()> {
+    pub fn from_hyte_str(s: &str) -> Result<Tryte, ()> {
         if s.len() != 2 {
             return Err(());
         }
@@ -93,12 +92,29 @@ impl Tryte {
         Ok(tryte)
     }
 
-    fn from_trit_str(s: &str) -> Result<Tryte, ()> {
+    pub fn from_trit_str(s: &str) -> Result<Tryte, ()> {
         if s.len() != 6 {
             return Err(());
         }
 
-        Ok(ZERO)
+        let trits_result: Result<Vec<_>, _> = s.chars().rev().map(Trit::try_from).collect();
+        let trits = trits_result?;
+        Tryte::from_trits(&trits)
+    }
+
+    fn from_trits(trits: &[Trit]) -> Result<Tryte, ()> {
+        let mut tryte = ZERO;
+
+        if trits.len() != 6 {
+            return Err(());
+        }
+
+        for i in 0..6 {
+            let trit = trits[i];
+            tryte = tryte.set_trit(i, trit);
+        }
+
+        Ok(tryte)
     }
 }
 
@@ -252,7 +268,7 @@ impl ops::Add for Tryte {
     }
 }
 
-struct HyteDisplay(Tryte);
+pub struct HyteDisplay(Tryte);
 
 impl fmt::Display for HyteDisplay {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -260,11 +276,11 @@ impl fmt::Display for HyteDisplay {
         let (low_hyte, high_hyte) = tryte.into();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
-        write!(f, "{}{}", low_char, high_char)
+        write!(f, "{}{}", high_char, low_char)
     }
 }
 
-struct TritDisplay(Tryte);
+pub struct TritDisplay(Tryte);
 
 impl fmt::Display for TritDisplay {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

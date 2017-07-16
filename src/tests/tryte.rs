@@ -5,20 +5,20 @@ use trit::Trit;
 use tryte::*;
 
 const TERNARY_MIN: u16 = 0b11_11_11_11_11_11;
-const TERNARY_MAX: u16 = 0b01_01_01_01_01_01;
+const TERNARY_NEG64: u16 = 0b00_11_01_11_00_11;
 const TERNARY_NEG1: u16 = 0b00_00_00_00_00_11;
 const TERNARY_0: u16 = 0b00_00_00_00_00_00;
 const TERNARY_1: u16 = 0b00_00_00_00_00_01;
 const TERNARY_64: u16 = 0b00_01_11_01_00_01;
-const TERNARY_NEG64: u16 = 0b00_11_01_11_00_11;
+const TERNARY_MAX: u16 = 0b01_01_01_01_01_01;
 
 const TRYTE_MIN: Tryte = Tryte(TERNARY_MIN);
-const TRYTE_MAX: Tryte = Tryte(TERNARY_MAX);
+const TRYTE_NEG64: Tryte = Tryte(TERNARY_NEG64);
 const TRYTE_NEG1: Tryte = Tryte(TERNARY_NEG1);
 const TRYTE_0: Tryte = Tryte(TERNARY_0);
 const TRYTE_1: Tryte = Tryte(TERNARY_1);
 const TRYTE_64: Tryte = Tryte(TERNARY_64);
-const TRYTE_NEG64: Tryte = Tryte(TERNARY_NEG64);
+const TRYTE_MAX: Tryte = Tryte(TERNARY_MAX);
 
 #[test]
 fn tryte_into_i16() {
@@ -166,4 +166,48 @@ fn tryte_cmp() {
     assert!(TRYTE_MIN < TRYTE_0);
     assert!(TRYTE_MIN < TRYTE_MAX);
     assert!(TRYTE_MIN == TRYTE_MIN);
+}
+
+#[test]
+fn tryte_display_hytes() {
+    assert_eq!("mm", format!("{}", TRYTE_MIN.display_hytes()));
+    assert_eq!("bj", format!("{}", TRYTE_NEG64.display_hytes()));
+    assert_eq!("0a", format!("{}", TRYTE_NEG1.display_hytes()));
+    assert_eq!("00", format!("{}", TRYTE_0.display_hytes()));
+    assert_eq!("0A", format!("{}", TRYTE_1.display_hytes()));
+    assert_eq!("BJ", format!("{}", TRYTE_64.display_hytes()));
+    assert_eq!("MM", format!("{}", TRYTE_MAX.display_hytes()));
+}
+
+#[test]
+fn tryte_from_hyte_str() {
+    assert_eq!(Ok(TRYTE_MIN), Tryte::from_hyte_str("mm"));
+    assert_eq!(Ok(TRYTE_NEG64), Tryte::from_hyte_str("bj"));
+    assert_eq!(Ok(TRYTE_NEG1), Tryte::from_hyte_str("0a"));
+    assert_eq!(Ok(TRYTE_0), Tryte::from_hyte_str("00"));
+    assert_eq!(Ok(TRYTE_1), Tryte::from_hyte_str("0A"));
+    assert_eq!(Ok(TRYTE_64), Tryte::from_hyte_str("BJ"));
+    assert_eq!(Ok(TRYTE_MAX), Tryte::from_hyte_str("MM"));
+}
+
+#[test]
+fn tryte_display_trits() {
+    assert_eq!("TTTTTT", format!("{}", TRYTE_MIN.display_trits()));
+    assert_eq!("0T1T0T", format!("{}", TRYTE_NEG64.display_trits()));
+    assert_eq!("00000T", format!("{}", TRYTE_NEG1.display_trits()));
+    assert_eq!("000000", format!("{}", TRYTE_0.display_trits()));
+    assert_eq!("000001", format!("{}", TRYTE_1.display_trits()));
+    assert_eq!("01T101", format!("{}", TRYTE_64.display_trits()));
+    assert_eq!("111111", format!("{}", TRYTE_MAX.display_trits()));
+}
+
+#[test]
+fn tryte_from_trit_str() {
+    assert_eq!(Ok(TRYTE_MIN), Tryte::from_trit_str("TTTTTT"));
+    assert_eq!(Ok(TRYTE_NEG64), Tryte::from_trit_str("0T1T0T"));
+    assert_eq!(Ok(TRYTE_NEG1), Tryte::from_trit_str("00000T"));
+    assert_eq!(Ok(TRYTE_0), Tryte::from_trit_str("000000"));
+    assert_eq!(Ok(TRYTE_1), Tryte::from_trit_str("000001"));
+    assert_eq!(Ok(TRYTE_64), Tryte::from_trit_str("01T101"));
+    assert_eq!(Ok(TRYTE_MAX), Tryte::from_trit_str("111111"));
 }

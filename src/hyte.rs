@@ -1,6 +1,7 @@
 use phf;
 
-static CHAR_TO_HYTE: phf::Map<char, u8> = phf_map! {
+static CHAR_TO_HYTE: phf::Map<char, u8> =
+    phf_map! {
     'm' => 0b11_11_11,
     'l' => 0b11_11_00,
     'k' => 0b11_11_01,

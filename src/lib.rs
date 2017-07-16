@@ -7,6 +7,7 @@ extern crate lazy_static;
 extern crate phf;
 
 mod trit;
+mod hyte;
 mod tryte;
 #[cfg(test)]
 mod tests;
