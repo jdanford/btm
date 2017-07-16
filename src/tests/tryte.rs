@@ -33,24 +33,26 @@ fn tryte_into_i16() {
 
 #[test]
 fn tryte_from_i16() {
+    assert_eq!(Ok(Tryte(TERNARY_MIN)), Tryte::try_from(MIN_VALUE));
+    assert_eq!(Ok(Tryte(TERNARY_NEG64)), Tryte::try_from(-64));
+    assert_eq!(Ok(Tryte(TERNARY_NEG1)), Tryte::try_from(-1));
+    assert_eq!(Ok(Tryte(TERNARY_0)), Tryte::try_from(0));
+    assert_eq!(Ok(Tryte(TERNARY_1)), Tryte::try_from(1));
+    assert_eq!(Ok(Tryte(TERNARY_64)), Tryte::try_from(64));
+    assert_eq!(Ok(Tryte(TERNARY_MAX)), Tryte::try_from(MAX_VALUE));
+
     assert!(Tryte::try_from(MIN_VALUE - 1).is_err());
     assert!(Tryte::try_from(MAX_VALUE + 1).is_err());
-    assert_eq!(TERNARY_MIN, Tryte::try_from(MIN_VALUE).unwrap().0);
-    assert_eq!(TERNARY_NEG1, Tryte::try_from(-1).unwrap().0);
-    assert_eq!(TERNARY_NEG64, Tryte::try_from(-64).unwrap().0);
-    assert_eq!(TERNARY_0, Tryte::try_from(0).unwrap().0);
-    assert_eq!(TERNARY_1, Tryte::try_from(1).unwrap().0);
-    assert_eq!(TERNARY_64, Tryte::try_from(64).unwrap().0);
-    assert_eq!(TERNARY_MAX, Tryte::try_from(MAX_VALUE).unwrap().0);
 }
 
 #[test]
 fn tryte_into_trit() {
+    assert_eq!(Ok(trit::NEG), TRYTE_NEG1.try_into());
+    assert_eq!(Ok(trit::ZERO), TRYTE_0.try_into());
+    assert_eq!(Ok(trit::POS), TRYTE_1.try_into());
+
     assert!(<Tryte as TryInto<Trit>>::try_into(TRYTE_NEG64).is_err());
     assert!(<Tryte as TryInto<Trit>>::try_into(TRYTE_64).is_err());
-    assert_eq!(trit::NEG, TRYTE_NEG1.try_into().unwrap());
-    assert_eq!(trit::ZERO, TRYTE_0.try_into().unwrap());
-    assert_eq!(trit::POS, TRYTE_1.try_into().unwrap());
 }
 
 #[test]
@@ -188,6 +190,11 @@ fn tryte_from_hyte_str() {
     assert_eq!(Ok(TRYTE_1), Tryte::from_hyte_str("0A"));
     assert_eq!(Ok(TRYTE_64), Tryte::from_hyte_str("BJ"));
     assert_eq!(Ok(TRYTE_MAX), Tryte::from_hyte_str("MM"));
+
+    assert!(Tryte::from_trit_str("").is_err());
+    assert!(Tryte::from_trit_str("M").is_err());
+    assert!(Tryte::from_trit_str("MMM").is_err());
+    assert!(Tryte::from_trit_str("NN").is_err());
 }
 
 #[test]
@@ -210,4 +217,9 @@ fn tryte_from_trit_str() {
     assert_eq!(Ok(TRYTE_1), Tryte::from_trit_str("000001"));
     assert_eq!(Ok(TRYTE_64), Tryte::from_trit_str("01T101"));
     assert_eq!(Ok(TRYTE_MAX), Tryte::from_trit_str("111111"));
+
+    assert!(Tryte::from_trit_str("").is_err());
+    assert!(Tryte::from_trit_str("TTTTT").is_err());
+    assert!(Tryte::from_trit_str("TTTTTTT").is_err());
+    assert!(Tryte::from_trit_str("222222").is_err());
 }

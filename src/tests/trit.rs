@@ -11,11 +11,12 @@ fn trit_into_i16() {
 
 #[test]
 fn trit_from_i16() {
+    assert_eq!(Ok(Trit(BIN_NEG)), Trit::try_from(-1));
+    assert_eq!(Ok(Trit(BIN_ZERO)), Trit::try_from(0));
+    assert_eq!(Ok(Trit(BIN_POS)), Trit::try_from(1));
+
     assert!(Trit::try_from(-2).is_err());
     assert!(Trit::try_from(2).is_err());
-    assert_eq!(BIN_NEG, Trit::try_from(-1).unwrap().0);
-    assert_eq!(BIN_ZERO, Trit::try_from(0).unwrap().0);
-    assert_eq!(BIN_POS, Trit::try_from(1).unwrap().0);
 }
 
 #[test]
@@ -27,19 +28,20 @@ fn trit_into_char() {
 
 #[test]
 fn trit_from_char() {
+    assert_eq!(Ok(Trit(BIN_NEG)), Trit::try_from('T'));
+    assert_eq!(Ok(Trit(BIN_ZERO)), Trit::try_from('0'));
+    assert_eq!(Ok(Trit(BIN_POS)), Trit::try_from('1'));
+
     assert!(Trit::try_from('t').is_err());
     assert!(Trit::try_from('S').is_err());
     assert!(Trit::try_from('2').is_err());
-    assert_eq!(BIN_NEG, Trit::try_from('T').unwrap().0);
-    assert_eq!(BIN_ZERO, Trit::try_from('0').unwrap().0);
-    assert_eq!(BIN_POS, Trit::try_from('1').unwrap().0);
 }
 
 #[test]
 fn trit_negate() {
+    assert_eq!(POS, -NEG);
     assert_eq!(ZERO, -ZERO);
     assert_eq!(NEG, -POS);
-    assert_eq!(POS, -NEG);
 }
 
 #[test]
