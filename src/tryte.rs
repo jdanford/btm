@@ -4,6 +4,9 @@ use std::fmt;
 use std::ops;
 use std::ops::Mul;
 
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+
+use error::{Error, Result};
 use trit;
 use trit::Trit;
 use hyte::{char_from_hyte, try_hyte_from_char};
@@ -32,6 +35,25 @@ impl Tryte {
         let shf = (i as u16) * 2;
         let bits = (self.0 | trit.0 << shf) & BITMASK;
         Tryte(bits)
+    }
+
+    pub fn from_bytes<R: ReadBytesExt>(reader: &mut R) -> Result<Tryte> {
+        let bits = reader.read_u16::<LittleEndian>()?;
+        let tryte = Tryte(bits);
+
+        for i in 0..6 {
+            let trit = tryte.get_trit(i);
+            let trit_bits = trit.0;
+            if trit_bits == trit::BIN_INVALID {
+                return Err(Error::InvalidBitPattern(trit_bits as u64));
+            }
+        }
+
+        Ok(tryte)
+    }
+
+    pub fn write_bytes<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
+        Ok(writer.write_u16::<LittleEndian>(self.0)?)
     }
 
     fn from_hytes(low_hyte: u8, high_hyte: u8) -> Tryte {
@@ -78,35 +100,39 @@ impl Tryte {
         (tryte, carry)
     }
 
-    pub fn from_hyte_str(s: &str) -> Result<Tryte, ()> {
+    pub fn from_hyte_str(s: &str) -> Result<Tryte> {
         if s.len() != 2 {
-            return Err(());
+            return Err(Error::InvalidDataLength(2, s.len()));
         }
 
         let mut chars = s.chars();
-        let high_char = chars.next().ok_or(())?;
-        let low_char = chars.next().ok_or(())?;
+        let high_char = chars.next().ok_or_else(
+            || Error::InvalidString(s.to_owned()),
+        )?;
+        let low_char = chars.next().ok_or_else(
+            || Error::InvalidString(s.to_owned()),
+        )?;
         let high_hyte = try_hyte_from_char(high_char)?;
         let low_hyte = try_hyte_from_char(low_char)?;
         let tryte = Tryte::from_hytes(low_hyte, high_hyte);
         Ok(tryte)
     }
 
-    pub fn from_trit_str(s: &str) -> Result<Tryte, ()> {
+    pub fn from_trit_str(s: &str) -> Result<Tryte> {
         if s.len() != 6 {
-            return Err(());
+            return Err(Error::InvalidDataLength(6, s.len()));
         }
 
-        let trits_result: Result<Vec<_>, _> = s.chars().rev().map(Trit::try_from).collect();
+        let trits_result: Result<Vec<_>> = s.chars().rev().map(Trit::try_from).collect();
         let trits = trits_result?;
         Tryte::from_trits(&trits)
     }
 
-    fn from_trits(trits: &[Trit]) -> Result<Tryte, ()> {
+    fn from_trits(trits: &[Trit]) -> Result<Tryte> {
         let mut tryte = ZERO;
 
         if trits.len() != 6 {
-            return Err(());
+            return Err(Error::InvalidDataLength(6, trits.len()));
         }
 
         for (i, &trit) in trits.iter().enumerate() {
@@ -162,12 +188,12 @@ impl From<Trit> for Tryte {
 }
 
 impl TryInto<Trit> for Tryte {
-    type Error = ();
+    type Error = Error;
 
-    fn try_into(self) -> Result<Trit, Self::Error> {
+    fn try_into(self) -> Result<Trit> {
         let bits = self.0;
         if bits == trit::BIN_INVALID || bits > trit::BIN_NEG {
-            Err(())
+            Err(Error::InvalidBitPattern(bits as u64))
         } else {
             Ok(Trit(bits))
         }
@@ -189,11 +215,15 @@ impl Into<i16> for Tryte {
 }
 
 impl TryFrom<i16> for Tryte {
-    type Error = ();
+    type Error = Error;
 
-    fn try_from(n: i16) -> Result<Self, Self::Error> {
+    fn try_from(n: i16) -> Result<Self> {
         if n < MIN_VALUE || MAX_VALUE < n {
-            return Err(());
+            return Err(Error::IntegerOutOfBounds(
+                MIN_VALUE as i64,
+                MAX_VALUE as i64,
+                n as i64,
+            ));
         }
 
         let negative = n < 0;

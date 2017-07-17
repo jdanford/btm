@@ -1,5 +1,7 @@
 use std::convert::{TryFrom, TryInto};
+use std::io::Cursor;
 
+use error::Result;
 use trit;
 use trit::Trit;
 use tryte::*;
@@ -60,6 +62,39 @@ fn tryte_from_trit() {
     assert_eq!(TRYTE_NEG1, trit::NEG.into());
     assert_eq!(TRYTE_0, trit::ZERO.into());
     assert_eq!(TRYTE_1, trit::POS.into());
+}
+
+#[test]
+fn tryte_from_bytes() {
+    assert_eq!(Ok(TRYTE_MIN), from_bytes(0b11_11_11_11, 0b00_00_11_11));
+    assert_eq!(Ok(TRYTE_NEG64), from_bytes(0b01_11_00_11, 0b00_00_00_11));
+    assert_eq!(Ok(TRYTE_NEG1), from_bytes(0b00_00_00_11, 0b00_00_00_00));
+    assert_eq!(Ok(TRYTE_0), from_bytes(0b00_00_00_00, 0b00_00_00_00));
+    assert_eq!(Ok(TRYTE_1), from_bytes(0b00_00_00_01, 0b00_00_00_00));
+    assert_eq!(Ok(TRYTE_64), from_bytes(0b11_01_00_01, 0b00_00_00_01));
+    assert_eq!(Ok(TRYTE_MAX), from_bytes(0b01_01_01_01, 0b00_00_01_01));
+}
+
+fn from_bytes(low: u8, high: u8) -> Result<Tryte> {
+    let mut cursor = Cursor::new(vec![low, high]);
+    Ok(Tryte::from_bytes(&mut cursor)?)
+}
+
+#[test]
+fn tryte_write_bytes() {
+    assert_eq!(Ok((0b11_11_11_11, 0b00_00_11_11)), get_bytes(TRYTE_MIN));
+    assert_eq!(Ok((0b01_11_00_11, 0b00_00_00_11)), get_bytes(TRYTE_NEG64));
+    assert_eq!(Ok((0b00_00_00_11, 0b00_00_00_00)), get_bytes(TRYTE_NEG1));
+    assert_eq!(Ok((0b00_00_00_00, 0b00_00_00_00)), get_bytes(TRYTE_0));
+    assert_eq!(Ok((0b00_00_00_01, 0b00_00_00_00)), get_bytes(TRYTE_1));
+    assert_eq!(Ok((0b11_01_00_01, 0b00_00_00_01)), get_bytes(TRYTE_64));
+    assert_eq!(Ok((0b01_01_01_01, 0b00_00_01_01)), get_bytes(TRYTE_MAX));
+}
+
+fn get_bytes(tryte: Tryte) -> Result<(u8, u8)> {
+    let mut bytes = vec![];
+    tryte.write_bytes(&mut bytes)?;
+    Ok((bytes[0], bytes[1]))
 }
 
 #[test]

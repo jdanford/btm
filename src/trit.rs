@@ -4,6 +4,8 @@ use std::ops;
 
 use phf;
 
+use error::{Error, Result};
+
 pub const BITMASK: u16 = 0b11;
 
 pub const BIN_ZERO: u16 = 0b00;
@@ -159,15 +161,15 @@ impl Into<i16> for Trit {
 static U16_TO_TRIT: [u16; 3] = [BIN_NEG, BIN_ZERO, BIN_POS];
 
 impl TryFrom<i16> for Trit {
-    type Error = ();
+    type Error = Error;
 
-    fn try_from(n: i16) -> Result<Self, Self::Error> {
+    fn try_from(n: i16) -> Result<Self> {
         let uint = (n + 1) as usize;
         if uint < 3 {
             let bits = U16_TO_TRIT[uint];
             Ok(Trit(bits))
         } else {
-            Err(())
+            Err(Error::IntegerOutOfBounds(-1, 1, n as i64))
         }
     }
 }
@@ -188,13 +190,13 @@ static CHAR_TO_TRIT: phf::Map<char, u16> =
 };
 
 impl TryFrom<char> for Trit {
-    type Error = ();
+    type Error = Error;
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn try_from(c: char) -> Result<Self> {
         if let Some(&bits) = CHAR_TO_TRIT.get(&c) {
             Ok(Trit(bits))
         } else {
-            Err(())
+            Err(Error::InvalidCharacter(c))
         }
     }
 }
@@ -213,9 +215,9 @@ impl Into<Ordering> for Trit {
 }
 
 impl TryFrom<Ordering> for Trit {
-    type Error = ();
+    type Error = Error;
 
-    fn try_from(ordering: Ordering) -> Result<Self, Self::Error> {
+    fn try_from(ordering: Ordering) -> Result<Self> {
         match ordering {
             Ordering::Less => Ok(NEG),
             Ordering::Equal => Ok(ZERO),
