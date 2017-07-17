@@ -109,8 +109,7 @@ impl Tryte {
             return Err(());
         }
 
-        for i in 0..6 {
-            let trit = trits[i];
+        for (i, &trit) in trits.iter().enumerate() {
             tryte = tryte.set_trit(i, trit);
         }
 
