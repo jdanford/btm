@@ -13,6 +13,7 @@ use hyte::{char_from_hyte, try_hyte_from_char};
 
 pub const MIN_VALUE: i16 = -364;
 pub const MAX_VALUE: i16 = 364;
+pub const TRIT_LEN: usize = 6;
 
 const BITMASK: u16 = 0b11_11_11_11_11_11;
 const HYTE_BITMASK: u8 = 0b11_11_11;
@@ -41,7 +42,7 @@ impl Tryte {
         let bits = reader.read_u16::<LittleEndian>()?;
         let tryte = Tryte(bits);
 
-        for i in 0..6 {
+        for i in 0..TRIT_LEN {
             let trit = tryte.get_trit(i);
             let trit_bits = trit.0;
             if trit_bits == trit::BIN_INVALID {
@@ -65,11 +66,11 @@ impl Tryte {
         (self.low(), self.high())
     }
 
-    pub fn low(self) -> u8 {
+    fn low(self) -> u8 {
         self.0 as u8 & HYTE_BITMASK
     }
 
-    pub fn high(self) -> u8 {
+    fn high(self) -> u8 {
         (self.0 >> HYTE_BIT_WIDTH) as u8 & HYTE_BITMASK
     }
 
@@ -89,7 +90,7 @@ impl Tryte {
         let mut tryte = ZERO;
         let mut carry = carry;
 
-        for i in 0..6 {
+        for i in 0..TRIT_LEN {
             let a = self.get_trit(i);
             let b = rhs.get_trit(i);
             let (c, _carry) = a.add_with_carry(b, carry);
@@ -101,10 +102,6 @@ impl Tryte {
     }
 
     pub fn from_hyte_str(s: &str) -> Result<Tryte> {
-        if s.len() != 2 {
-            return Err(Error::InvalidDataLength(2, s.len()));
-        }
-
         let mut chars = s.chars();
         let high_char = chars.next().ok_or_else(
             || Error::InvalidString(s.to_owned()),
@@ -119,8 +116,8 @@ impl Tryte {
     }
 
     pub fn from_trit_str(s: &str) -> Result<Tryte> {
-        if s.len() != 6 {
-            return Err(Error::InvalidDataLength(6, s.len()));
+        if s.len() != TRIT_LEN {
+            return Err(Error::InvalidDataLength(TRIT_LEN, s.len()));
         }
 
         let trits_result: Result<Vec<_>> = s.chars().rev().map(Trit::try_from).collect();
@@ -131,8 +128,8 @@ impl Tryte {
     fn from_trits(trits: &[Trit]) -> Result<Tryte> {
         let mut tryte = ZERO;
 
-        if trits.len() != 6 {
-            return Err(Error::InvalidDataLength(6, trits.len()));
+        if trits.len() != TRIT_LEN {
+            return Err(Error::InvalidDataLength(TRIT_LEN, trits.len()));
         }
 
         for (i, &trit) in trits.iter().enumerate() {
@@ -142,15 +139,15 @@ impl Tryte {
         Ok(tryte)
     }
 
-    fn fmt_hytes(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    pub fn fmt_hytes(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
         write!(f, "{}{}", high_char, low_char)
     }
 
-    fn fmt_trits(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for i in (0..6).rev() {
+    pub fn fmt_trits(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for i in (0..TRIT_LEN).rev() {
             let trit = self.get_trit(i);
             let c: char = trit.into();
             write!(f, "{}", c)?;
@@ -171,7 +168,7 @@ impl Tryte {
 fn zip<F: Fn(Trit, Trit) -> Trit>(lhs: Tryte, rhs: Tryte, f: F) -> Tryte {
     let mut tryte = ZERO;
 
-    for i in 0..6 {
+    for i in 0..TRIT_LEN {
         let a = lhs.get_trit(i);
         let b = rhs.get_trit(i);
         let c = f(a, b);
@@ -204,7 +201,7 @@ impl Into<i16> for Tryte {
     fn into(self) -> i16 {
         let mut n = 0i16;
 
-        for i in (0..6).rev() {
+        for i in (0..TRIT_LEN).rev() {
             let trit = self.get_trit(i);
             let t: i16 = trit.into();
             n = n * 3 + t;
@@ -230,7 +227,7 @@ impl TryFrom<i16> for Tryte {
         let mut n = n.abs();
         let mut tryte = ZERO;
 
-        for i in 0..6 {
+        for i in 0..TRIT_LEN {
             let rem_trit = match n % 3 {
                 1 => trit::POS,
                 0 => trit::ZERO,
@@ -253,7 +250,7 @@ impl PartialOrd for Tryte {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let mut cmp_trit = trit::ZERO;
 
-        for i in (0..6).rev() {
+        for i in (0..TRIT_LEN).rev() {
             let a = self.get_trit(i);
             let b = other.get_trit(i);
             cmp_trit = a.tcmp(b);

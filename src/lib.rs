@@ -11,5 +11,6 @@ mod error;
 mod trit;
 mod hyte;
 mod tryte;
+mod ternary;
 #[cfg(test)]
 mod tests;
