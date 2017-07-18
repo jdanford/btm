@@ -94,8 +94,8 @@ lazy_static! {
         table[0b00_11_00] = (BIN_NEG, BIN_ZERO);
         table[0b00_11_01] = (BIN_ZERO, BIN_ZERO);
         table[0b00_11_11] = (BIN_POS, BIN_NEG);
-        table[0b01_00_00] = (BIN_ZERO, BIN_ZERO);
-        table[0b01_00_01] = (BIN_POS, BIN_ZERO);
+        table[0b01_00_00] = (BIN_POS, BIN_ZERO);
+        table[0b01_00_01] = (BIN_NEG, BIN_POS);
         table[0b01_00_11] = (BIN_ZERO, BIN_ZERO);
         table[0b01_01_00] = (BIN_NEG, BIN_POS);
         table[0b01_01_01] = (BIN_ZERO, BIN_POS);

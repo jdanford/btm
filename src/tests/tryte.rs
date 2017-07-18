@@ -84,9 +84,21 @@ fn get_bytes(tryte: Tryte) -> Result<(u8, u8)> {
 
 #[test]
 fn tryte_negate() {
-    let tryte_pos = Tryte::try_from(64).unwrap();
-    let tryte_neg = Tryte::try_from(-64).unwrap();
-    assert_eq!(tryte_pos, -tryte_neg);
+    assert_eq!(TRYTE_MIN, -TRYTE_MAX);
+    assert_eq!(TRYTE_NEG64, -TRYTE_64);
+    assert_eq!(TRYTE_NEG1, -TRYTE_1);
+    assert_eq!(TRYTE_0, -TRYTE_0);
+    assert_eq!(TRYTE_1, -TRYTE_NEG1);
+    assert_eq!(TRYTE_64, -TRYTE_NEG64);
+    assert_eq!(TRYTE_MAX, -TRYTE_MIN);
+
+    assert_eq!(TRYTE_MAX, -TRYTE_MIN);
+    assert_eq!(TRYTE_64, -TRYTE_NEG64);
+    assert_eq!(TRYTE_1, -TRYTE_NEG1);
+    assert_eq!(TRYTE_0, -TRYTE_0);
+    assert_eq!(TRYTE_NEG1, -TRYTE_1);
+    assert_eq!(TRYTE_NEG64, -TRYTE_64);
+    assert_eq!(TRYTE_MIN, -TRYTE_MAX);
 }
 
 #[test]
@@ -117,10 +129,25 @@ fn tryte_or() {
 
 #[test]
 fn tryte_add() {
-    let tryte_pos = Tryte::try_from(64).unwrap();
-    let tryte_neg = Tryte::try_from(-64).unwrap();
-    let tryte_sum = tryte_pos + tryte_neg;
-    assert_eq!(0i16, tryte_sum.into());
+    assert_eq!(TRYTE_0, TRYTE_1 + TRYTE_NEG1);
+    assert_eq!(TRYTE_0, TRYTE_64 + TRYTE_NEG64);
+    assert_eq!(TRYTE_0, TRYTE_MAX + TRYTE_MIN);
+
+    assert_eq!(TRYTE_MIN, TRYTE_MIN + TRYTE_0);
+    assert_eq!(TRYTE_NEG64, TRYTE_NEG64 + TRYTE_0);
+    assert_eq!(TRYTE_NEG1, TRYTE_NEG1 + TRYTE_0);
+    assert_eq!(TRYTE_0, TRYTE_0 + TRYTE_0);
+    assert_eq!(TRYTE_1, TRYTE_1 + TRYTE_0);
+    assert_eq!(TRYTE_64, TRYTE_64 + TRYTE_0);
+    assert_eq!(TRYTE_MAX, TRYTE_MAX + TRYTE_0);
+
+    assert_eq!(TRYTE_MIN, TRYTE_0 + TRYTE_MIN);
+    assert_eq!(TRYTE_NEG64, TRYTE_0 + TRYTE_NEG64);
+    assert_eq!(TRYTE_NEG1, TRYTE_0 + TRYTE_NEG1);
+    assert_eq!(TRYTE_0, TRYTE_0 + TRYTE_0);
+    assert_eq!(TRYTE_1, TRYTE_0 + TRYTE_1);
+    assert_eq!(TRYTE_64, TRYTE_0 + TRYTE_64);
+    assert_eq!(TRYTE_MAX, TRYTE_0 + TRYTE_MAX);
 }
 
 #[test]

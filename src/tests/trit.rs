@@ -71,6 +71,37 @@ fn trit_or() {
 }
 
 #[test]
+fn trit_add() {
+    assert_eq!((ZERO, ZERO), ZERO.add_with_carry(ZERO, ZERO));
+    assert_eq!((POS, ZERO), ZERO.add_with_carry(ZERO, POS));
+    assert_eq!((NEG, ZERO), ZERO.add_with_carry(ZERO, NEG));
+    assert_eq!((POS, ZERO), ZERO.add_with_carry(POS, ZERO));
+    assert_eq!((NEG, POS), ZERO.add_with_carry(POS, POS));
+    assert_eq!((ZERO, ZERO), ZERO.add_with_carry(POS, NEG));
+    assert_eq!((NEG, ZERO), ZERO.add_with_carry(NEG, ZERO));
+    assert_eq!((ZERO, ZERO), ZERO.add_with_carry(NEG, POS));
+    assert_eq!((POS, NEG), ZERO.add_with_carry(NEG, NEG));
+    assert_eq!((POS, ZERO), POS.add_with_carry(ZERO, ZERO));
+    assert_eq!((NEG, POS), POS.add_with_carry(ZERO, POS));
+    assert_eq!((ZERO, ZERO), POS.add_with_carry(ZERO, NEG));
+    assert_eq!((NEG, POS), POS.add_with_carry(POS, ZERO));
+    assert_eq!((ZERO, POS), POS.add_with_carry(POS, POS));
+    assert_eq!((POS, ZERO), POS.add_with_carry(POS, NEG));
+    assert_eq!((ZERO, ZERO), POS.add_with_carry(NEG, ZERO));
+    assert_eq!((POS, ZERO), POS.add_with_carry(NEG, POS));
+    assert_eq!((NEG, ZERO), POS.add_with_carry(NEG, NEG));
+    assert_eq!((NEG, ZERO), NEG.add_with_carry(ZERO, ZERO));
+    assert_eq!((POS, ZERO), NEG.add_with_carry(ZERO, POS));
+    assert_eq!((POS, NEG), NEG.add_with_carry(ZERO, NEG));
+    assert_eq!((ZERO, ZERO), NEG.add_with_carry(POS, ZERO));
+    assert_eq!((POS, ZERO), NEG.add_with_carry(POS, POS));
+    assert_eq!((NEG, ZERO), NEG.add_with_carry(POS, NEG));
+    assert_eq!((POS, NEG), NEG.add_with_carry(NEG, ZERO));
+    assert_eq!((NEG, ZERO), NEG.add_with_carry(NEG, POS));
+    assert_eq!((ZERO, NEG), NEG.add_with_carry(NEG, NEG));
+}
+
+#[test]
 fn trit_mul() {
     assert_eq!(ZERO, ZERO * ZERO);
     assert_eq!(ZERO, ZERO * POS);
