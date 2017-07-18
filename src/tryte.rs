@@ -102,6 +102,10 @@ impl Tryte {
     }
 
     pub fn from_hyte_str(s: &str) -> Result<Tryte> {
+        if s.len() != 2 {
+            return Err(Error::InvalidDataLength(2, s.len()));
+        }
+
         let mut chars = s.chars();
         let high_char = chars.next().ok_or_else(
             || Error::InvalidString(s.to_owned()),

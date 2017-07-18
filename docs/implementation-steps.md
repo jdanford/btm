@@ -1,4 +1,4 @@
-- [ ] Tryte operations
+- [x] Tryte operations
 - [ ] Word operations
 - [ ] Main VM loop
 - [ ] Encoding / decoding

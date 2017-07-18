@@ -67,19 +67,19 @@ fn from_bytes(low: u8, high: u8) -> Result<Tryte> {
 
 #[test]
 fn tryte_write_bytes() {
-    assert_eq!(Ok((0b11_11_11_11, 0b00_00_11_11)), get_bytes(TRYTE_MIN));
-    assert_eq!(Ok((0b01_11_00_11, 0b00_00_00_11)), get_bytes(TRYTE_NEG64));
-    assert_eq!(Ok((0b00_00_00_11, 0b00_00_00_00)), get_bytes(TRYTE_NEG1));
-    assert_eq!(Ok((0b00_00_00_00, 0b00_00_00_00)), get_bytes(TRYTE_0));
-    assert_eq!(Ok((0b00_00_00_01, 0b00_00_00_00)), get_bytes(TRYTE_1));
-    assert_eq!(Ok((0b11_01_00_01, 0b00_00_00_01)), get_bytes(TRYTE_64));
-    assert_eq!(Ok((0b01_01_01_01, 0b00_00_01_01)), get_bytes(TRYTE_MAX));
+    assert_eq!(vec![0b11_11_11_11, 0b00_00_11_11], get_bytes(TRYTE_MIN));
+    assert_eq!(vec![0b01_11_00_11, 0b00_00_00_11], get_bytes(TRYTE_NEG64));
+    assert_eq!(vec![0b00_00_00_11, 0b00_00_00_00], get_bytes(TRYTE_NEG1));
+    assert_eq!(vec![0b00_00_00_00, 0b00_00_00_00], get_bytes(TRYTE_0));
+    assert_eq!(vec![0b00_00_00_01, 0b00_00_00_00], get_bytes(TRYTE_1));
+    assert_eq!(vec![0b11_01_00_01, 0b00_00_00_01], get_bytes(TRYTE_64));
+    assert_eq!(vec![0b01_01_01_01, 0b00_00_01_01], get_bytes(TRYTE_MAX));
 }
 
-fn get_bytes(tryte: Tryte) -> Result<(u8, u8)> {
+fn get_bytes(tryte: Tryte) -> Vec<u8> {
     let mut bytes = vec![];
-    tryte.write_bytes(&mut bytes)?;
-    Ok((bytes[0], bytes[1]))
+    tryte.write_bytes(&mut bytes).unwrap();
+    bytes
 }
 
 #[test]

@@ -1,3 +1,4 @@
+## Real (36)
 - {add, and, or, tmul, tcmp, cmp, shf} $dest, $a, $b
 - {mul, div} $a, $b
 - {addi, andi, ori, tmuli, tcmpi, shfi} $dest, $src, immediate (12)
@@ -11,6 +12,8 @@
 - {jmpr, callr} $src
 - syscall
 - brk
+
+## Pseudo (6)
 - nop -> or $zero, $zero, $zero
 - mov $dest, $src -> tcmp $dest, $src, $zero
 - not $dest, $src -> tcmp $dest, $zero, $src

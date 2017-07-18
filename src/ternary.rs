@@ -1,11 +1,14 @@
+use std::convert::TryFrom;
+use std::fmt;
+use std::ops::{BitAnd, BitOr, Mul, Neg};
+
+use byteorder::{ReadBytesExt, WriteBytesExt};
+
 use error::{Error, Result};
 use trit;
 use trit::Trit;
 use tryte;
 use tryte::Tryte;
-
-pub const WORD_MIN: i64 = -141_214_768_240;
-pub const WORD_MAX: i64 = 141_214_768_240;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Ternary<'a> {
@@ -13,6 +16,10 @@ pub struct Ternary<'a> {
 }
 
 impl<'a> Ternary<'a> {
+    pub fn new(trytes: &'a mut [Tryte]) -> Ternary<'a> {
+        Ternary { trytes: trytes }
+    }
+
     pub fn tryte_len(&self) -> usize {
         self.trytes.len()
     }
@@ -46,6 +53,22 @@ impl<'a> Ternary<'a> {
         self.trytes[tryte_index] = tryte.set_trit(trit_index, trit);
     }
 
+    pub fn read_bytes<R: ReadBytesExt>(&mut self, reader: &mut R) -> Result<()> {
+        for i in 0..self.tryte_len() {
+            self.trytes[i] = Tryte::from_bytes(reader)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn write_bytes<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
+        for tryte in self.trytes.iter() {
+            tryte.write_bytes(writer)?;
+        }
+
+        Ok(())
+    }
+
     pub fn read_int(&mut self, n: i64) -> Result<()> {
         if n < self.min_value() || self.max_value() < n {
             return Err(Error::IntegerOutOfBounds(
@@ -75,6 +98,143 @@ impl<'a> Ternary<'a> {
 
         Ok(())
     }
+
+    pub fn negate(&mut self) {
+        self.mutate_trytes(Tryte::neg);
+    }
+
+    pub fn and(&mut self, other: &Ternary<'a>) {
+        self.mutate2_trits(other, Trit::bitand);
+    }
+
+    pub fn or(&mut self, other: &Ternary<'a>) {
+        self.mutate2_trits(other, Trit::bitor);
+    }
+
+    pub fn tcmp(&mut self, other: &Ternary<'a>) {
+        self.mutate2_trits(other, Trit::tcmp)
+    }
+
+    pub fn tmul(&mut self, other: &Ternary<'a>) {
+        self.mutate2_trits(other, Trit::mul)
+    }
+
+    pub fn add_with_carry(&mut self, rhs: &Ternary<'a>, carry: Trit) -> Trit {
+        let mut carry = carry;
+
+        for i in 0..self.trit_len() {
+            let a = self.get_trit(i);
+            let b = rhs.get_trit(i);
+            let (c, _carry) = a.add_with_carry(b, carry);
+            carry = _carry;
+            self.set_trit(i, c);
+        }
+
+        carry
+    }
+
+    pub fn compare(&self, other: &Ternary<'a>) -> Trit {
+        let mut cmp_trit = trit::ZERO;
+
+        for i in (0..self.trit_len()).rev() {
+            let a = self.get_trit(i);
+            let b = other.get_trit(i);
+            cmp_trit = a.tcmp(b);
+
+            if cmp_trit != trit::ZERO {
+                break;
+            }
+        }
+
+        cmp_trit
+    }
+
+    pub fn read_hyte_str(&mut self, s: &str) -> Result<()> {
+        let len = self.tryte_len() * 2;
+        if s.len() != len {
+            return Err(Error::InvalidDataLength(len, s.len()));
+        }
+
+        let mut s = s;
+        for i in 0..self.tryte_len() {
+            let (substr, _s) = s.split_at(2);
+            s = _s;
+            let tryte = Tryte::from_hyte_str(substr)?;
+            self.trytes[i] = tryte;
+        }
+
+        Ok(())
+    }
+
+    pub fn read_trit_str(&mut self, s: &str) -> Result<()> {
+        if s.len() != self.trit_len() {
+            return Err(Error::InvalidDataLength(self.trit_len(), s.len()));
+        }
+
+        for (i, c) in s.chars().rev().enumerate() {
+            let trit = Trit::try_from(c)?;
+            self.set_trit(i, trit);
+        }
+
+        Ok(())
+    }
+
+    fn read_trits(&mut self, trits: &[Trit]) -> Result<()> {
+        if trits.len() != self.trit_len() {
+            return Err(Error::InvalidDataLength(self.trit_len(), trits.len()));
+        }
+
+        for (i, &trit) in trits.iter().enumerate() {
+            self.set_trit(i, trit);
+        }
+
+        Ok(())
+    }
+
+    pub fn display_hytes(&'a self) -> DisplayHytes<'a> {
+        DisplayHytes(self)
+    }
+
+    pub fn display_trits(&'a self) -> DisplayTrits<'a> {
+        DisplayTrits(self)
+    }
+
+    fn mutate_trits<F: Fn(Trit) -> Trit>(&mut self, f: F) {
+        for i in 0..self.trit_len() {
+            let trit = self.get_trit(i);
+            self.set_trit(i, f(trit));
+        }
+    }
+
+    fn mutate_trytes<F: Fn(Tryte) -> Tryte>(&mut self, f: F) {
+        for i in 0..self.tryte_len() {
+            let tryte = self.trytes[i];
+            self.trytes[i] = f(tryte);
+        }
+    }
+
+    fn mutate2_trits<F: Fn(Trit, Trit) -> Trit>(&mut self, other: &Ternary<'a>, f: F) {
+        for i in 0..self.trit_len() {
+            let a = self.get_trit(i);
+            let b = other.get_trit(i);
+            let c = f(a, b);
+            self.set_trit(i, c);
+        }
+    }
+
+    fn mutate2_trytes<F: Fn(Tryte, Tryte) -> Tryte>(&mut self, other: &Ternary<'a>, f: F) {
+        for i in 0..self.tryte_len() {
+            let a = self.trytes[i];
+            let b = other.trytes[i];
+            self.trytes[i] = f(a, b);
+        }
+    }
+}
+
+fn indices(i: usize) -> (usize, usize) {
+    let tryte_index = i / tryte::TRIT_LEN;
+    let trit_index = i % tryte::TRIT_LEN;
+    (tryte_index, trit_index)
 }
 
 impl<'a> Into<i64> for Ternary<'a> {
@@ -91,8 +251,34 @@ impl<'a> Into<i64> for Ternary<'a> {
     }
 }
 
-fn indices(i: usize) -> (usize, usize) {
-    let tryte_index = i / tryte::TRIT_LEN;
-    let trit_index = i % tryte::TRIT_LEN;
-    (tryte_index, trit_index)
+pub struct DisplayHytes<'a>(&'a Ternary<'a>);
+
+impl<'a> fmt::Display for DisplayHytes<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0h")?;
+
+        let ternary = self.0;
+        for tryte in ternary.trytes.iter().rev() {
+            tryte.fmt_hytes(f)?;
+        }
+
+        Ok(())
+    }
+}
+
+pub struct DisplayTrits<'a>(&'a Ternary<'a>);
+
+impl<'a> fmt::Display for DisplayTrits<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0t")?;
+
+        let ternary = self.0;
+        for i in (0..ternary.trit_len()).rev() {
+            let trit = ternary.get_trit(i);
+            let c: char = trit.into();
+            write!(f, "{}", c)?;
+        }
+
+        Ok(())
+    }
 }
