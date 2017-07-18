@@ -55,7 +55,7 @@ impl<'a> Ternary<'a> {
             ));
         }
 
-        let negative = n < 0;
+        let sign_trit = if n < 0 { trit::NEG } else { trit::POS };
         let mut n = n.abs();
 
         for i in 0..self.trit_len() {
@@ -68,7 +68,7 @@ impl<'a> Ternary<'a> {
                 }
             };
 
-            let trit = if negative { -rem_trit } else { rem_trit };
+            let trit = sign_trit * rem_trit;
             self.set_trit(i, trit);
             n /= 3;
         }

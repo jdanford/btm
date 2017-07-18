@@ -223,7 +223,7 @@ impl TryFrom<i16> for Tryte {
             ));
         }
 
-        let negative = n < 0;
+        let sign_trit = if n < 0 { trit::NEG } else { trit::POS };
         let mut n = n.abs();
         let mut tryte = ZERO;
 
@@ -237,7 +237,7 @@ impl TryFrom<i16> for Tryte {
                 }
             };
 
-            let trit = if negative { -rem_trit } else { rem_trit };
+            let trit = sign_trit * rem_trit;
             tryte = tryte.set_trit(i, trit);
             n /= 3;
         }
