@@ -5,22 +5,7 @@ use error::Result;
 use trit;
 use trit::Trit;
 use tryte::*;
-
-const TERNARY_MIN: u16 = 0b11_11_11_11_11_11;
-const TERNARY_NEG64: u16 = 0b00_11_01_11_00_11;
-const TERNARY_NEG1: u16 = 0b00_00_00_00_00_11;
-const TERNARY_0: u16 = 0b00_00_00_00_00_00;
-const TERNARY_1: u16 = 0b00_00_00_00_00_01;
-const TERNARY_64: u16 = 0b00_01_11_01_00_01;
-const TERNARY_MAX: u16 = 0b01_01_01_01_01_01;
-
-const TRYTE_MIN: Tryte = Tryte(TERNARY_MIN);
-const TRYTE_NEG64: Tryte = Tryte(TERNARY_NEG64);
-const TRYTE_NEG1: Tryte = Tryte(TERNARY_NEG1);
-const TRYTE_0: Tryte = Tryte(TERNARY_0);
-const TRYTE_1: Tryte = Tryte(TERNARY_1);
-const TRYTE_64: Tryte = Tryte(TERNARY_64);
-const TRYTE_MAX: Tryte = Tryte(TERNARY_MAX);
+use tests::constants::*;
 
 #[test]
 fn tryte_into_i16() {
@@ -35,13 +20,13 @@ fn tryte_into_i16() {
 
 #[test]
 fn tryte_from_i16() {
-    assert_eq!(Ok(Tryte(TERNARY_MIN)), Tryte::try_from(MIN_VALUE));
-    assert_eq!(Ok(Tryte(TERNARY_NEG64)), Tryte::try_from(-64));
-    assert_eq!(Ok(Tryte(TERNARY_NEG1)), Tryte::try_from(-1));
-    assert_eq!(Ok(Tryte(TERNARY_0)), Tryte::try_from(0));
-    assert_eq!(Ok(Tryte(TERNARY_1)), Tryte::try_from(1));
-    assert_eq!(Ok(Tryte(TERNARY_64)), Tryte::try_from(64));
-    assert_eq!(Ok(Tryte(TERNARY_MAX)), Tryte::try_from(MAX_VALUE));
+    assert_eq!(Ok(TRYTE_MIN), Tryte::try_from(MIN_VALUE));
+    assert_eq!(Ok(TRYTE_NEG64), Tryte::try_from(-64));
+    assert_eq!(Ok(TRYTE_NEG1), Tryte::try_from(-1));
+    assert_eq!(Ok(TRYTE_0), Tryte::try_from(0));
+    assert_eq!(Ok(TRYTE_1), Tryte::try_from(1));
+    assert_eq!(Ok(TRYTE_64), Tryte::try_from(64));
+    assert_eq!(Ok(TRYTE_MAX), Tryte::try_from(MAX_VALUE));
 
     assert!(Tryte::try_from(MIN_VALUE - 1).is_err());
     assert!(Tryte::try_from(MAX_VALUE + 1).is_err());

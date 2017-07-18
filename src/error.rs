@@ -9,7 +9,6 @@ pub enum Error {
     InvalidDataLength(usize, usize),
     InvalidString(String),
     IoError(io::Error),
-    ResultTypeTooSmall(i64, i64),
 }
 
 impl PartialEq for Error {

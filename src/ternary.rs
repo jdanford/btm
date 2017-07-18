@@ -4,9 +4,12 @@ use trit::Trit;
 use tryte;
 use tryte::Tryte;
 
+pub const WORD_MIN: i64 = -141_214_768_240;
+pub const WORD_MAX: i64 = 141_214_768_240;
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Ternary<'a> {
-    trytes: &'a mut [Tryte],
+    pub trytes: &'a mut [Tryte],
 }
 
 impl<'a> Ternary<'a> {
@@ -28,7 +31,7 @@ impl<'a> Ternary<'a> {
     }
 
     pub fn max_value(&self) -> i64 {
-        -(self.range() - 1) / 2
+        (self.range() - 1) / 2
     }
 
     pub fn get_trit(&self, i: usize) -> Trit {
