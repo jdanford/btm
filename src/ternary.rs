@@ -103,23 +103,23 @@ impl<'a> Ternary<'a> {
         self.mutate_trytes(Tryte::neg);
     }
 
-    pub fn and(&mut self, other: &Ternary<'a>) {
+    pub fn and(&mut self, other: &Ternary) {
         self.mutate2_trits(other, Trit::bitand);
     }
 
-    pub fn or(&mut self, other: &Ternary<'a>) {
+    pub fn or(&mut self, other: &Ternary) {
         self.mutate2_trits(other, Trit::bitor);
     }
 
-    pub fn tcmp(&mut self, other: &Ternary<'a>) {
+    pub fn tcmp(&mut self, other: &Ternary) {
         self.mutate2_trits(other, Trit::tcmp)
     }
 
-    pub fn tmul(&mut self, other: &Ternary<'a>) {
+    pub fn tmul(&mut self, other: &Ternary) {
         self.mutate2_trits(other, Trit::mul)
     }
 
-    pub fn add_with_carry(&mut self, rhs: &Ternary<'a>, carry: Trit) -> Trit {
+    pub fn add_with_carry(&mut self, rhs: &Ternary, carry: Trit) -> Trit {
         let mut carry = carry;
 
         for i in 0..self.trit_len() {
@@ -133,7 +133,7 @@ impl<'a> Ternary<'a> {
         carry
     }
 
-    pub fn compare(&self, other: &Ternary<'a>) -> Trit {
+    pub fn compare(&self, other: &Ternary) -> Trit {
         let mut cmp_trit = trit::ZERO;
 
         for i in (0..self.trit_len()).rev() {
@@ -191,11 +191,11 @@ impl<'a> Ternary<'a> {
         Ok(())
     }
 
-    pub fn display_hytes(&'a self) -> DisplayHytes<'a> {
+    pub fn display_hytes(&self) -> DisplayHytes {
         DisplayHytes(self)
     }
 
-    pub fn display_trits(&'a self) -> DisplayTrits<'a> {
+    pub fn display_trits(&self) -> DisplayTrits {
         DisplayTrits(self)
     }
 
@@ -213,7 +213,7 @@ impl<'a> Ternary<'a> {
         }
     }
 
-    fn mutate2_trits<F: Fn(Trit, Trit) -> Trit>(&mut self, other: &Ternary<'a>, f: F) {
+    fn mutate2_trits<F: Fn(Trit, Trit) -> Trit>(&mut self, other: &Ternary, f: F) {
         for i in 0..self.trit_len() {
             let a = self.get_trit(i);
             let b = other.get_trit(i);
@@ -222,7 +222,7 @@ impl<'a> Ternary<'a> {
         }
     }
 
-    fn mutate2_trytes<F: Fn(Tryte, Tryte) -> Tryte>(&mut self, other: &Ternary<'a>, f: F) {
+    fn mutate2_trytes<F: Fn(Tryte, Tryte) -> Tryte>(&mut self, other: &Ternary, f: F) {
         for i in 0..self.tryte_len() {
             let a = self.trytes[i];
             let b = other.trytes[i];
