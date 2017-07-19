@@ -12,5 +12,8 @@ mod trit;
 mod hyte;
 mod tryte;
 mod ternary;
+mod registers;
+mod opcodes;
+mod instructions;
 #[cfg(test)]
 mod tests;

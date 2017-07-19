@@ -1,7 +1,7 @@
 ## Real (36)
-- {add, and, or, tmul, tcmp, cmp, shf} $dest, $a, $b
+- {and, or, tmul, tcmp, cmp, shf, add} $dest, $a, $b
 - {mul, div} $a, $b
-- {addi, andi, ori, tmuli, tcmpi, shfi} $dest, $src, immediate (12)
+- {andi, ori, tmuli, tcmpi, shfi, addi} $dest, $src, immediate (12)
 - lui $dest, immediate (12)
 - lsr $dest, $sys
 - ssr $sys, $src
@@ -11,12 +11,12 @@
 - {jmp, call} address (20)
 - {jmpr, callr} $src
 - syscall
-- brk
+- break
 
 ## Pseudo (6)
-- nop -> or $zero, $zero, $zero
+- sub $dest, $a, $b -> tcmp $b, $zero, $b; add $dest, $a, $b
 - mov $dest, $src -> tcmp $dest, $src, $zero
 - not $dest, $src -> tcmp $dest, $zero, $src
-- sub $dest, $a, $b -> tcmp $b, $zero, $b; add $dest, $a, $b
 - li $dest, immediate -> addi $dest, $zero, immediate
 - la $dest, address -> lui $dest, address[12:24]; ori $dest, address[0:12]
+- nop -> and $zero, $zero, $zero
