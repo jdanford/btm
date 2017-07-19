@@ -1,8 +1,6 @@
-use std::convert::{TryFrom, TryInto};
-use std::cmp::Ordering;
+use std::convert::TryInto;
 use std::fmt;
 use std::ops;
-use std::ops::Mul;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
@@ -11,8 +9,6 @@ use trit;
 use trit::Trit;
 use hyte::{char_from_hyte, try_hyte_from_char};
 
-pub const MIN_VALUE: i16 = -364;
-pub const MAX_VALUE: i16 = 364;
 pub const TRIT_LEN: usize = 6;
 
 const BITMASK: u16 = 0b11_11_11_11_11_11;
@@ -20,7 +16,7 @@ const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 const HYTE_BIT_WIDTH: usize = 6;
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Tryte(pub u16);
 
 pub const ZERO: Tryte = Tryte(trit::BIN_ZERO);
@@ -81,14 +77,6 @@ impl Tryte {
         self.0 << 1 & SIGN_BITMASK
     }
 
-    pub fn tcmp(self, rhs: Tryte) -> Tryte {
-        zip(self, rhs, Trit::tcmp)
-    }
-
-    pub fn tmul(self, rhs: Tryte) -> Tryte {
-        zip(self, rhs, Trit::mul)
-    }
-
     pub fn add_with_carry(self, rhs: Tryte, carry: Trit) -> (Tryte, Trit) {
         let mut tryte = ZERO;
         let mut carry = carry;
@@ -122,67 +110,12 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn from_trit_str(s: &str) -> Result<Tryte> {
-        if s.len() != TRIT_LEN {
-            return Err(Error::InvalidDataLength(TRIT_LEN, s.len()));
-        }
-
-        let trits_result: Result<Vec<_>> = s.chars().rev().map(Trit::try_from).collect();
-        let trits = trits_result?;
-        Tryte::from_trits(&trits)
-    }
-
-    fn from_trits(trits: &[Trit]) -> Result<Tryte> {
-        let mut tryte = ZERO;
-
-        if trits.len() != TRIT_LEN {
-            return Err(Error::InvalidDataLength(TRIT_LEN, trits.len()));
-        }
-
-        for (i, &trit) in trits.iter().enumerate() {
-            tryte = tryte.set_trit(i, trit);
-        }
-
-        Ok(tryte)
-    }
-
     pub fn fmt_hytes(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
         write!(f, "{}{}", high_char, low_char)
     }
-
-    pub fn fmt_trits(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for i in (0..TRIT_LEN).rev() {
-            let trit = self.get_trit(i);
-            let c: char = trit.into();
-            write!(f, "{}", c)?;
-        }
-
-        Ok(())
-    }
-
-    pub fn display_hytes(self) -> DisplayHytes {
-        DisplayHytes(self)
-    }
-
-    pub fn display_trits(self) -> DisplayTrits {
-        DisplayTrits(self)
-    }
-}
-
-fn zip<F: Fn(Trit, Trit) -> Trit>(lhs: Tryte, rhs: Tryte, f: F) -> Tryte {
-    let mut tryte = ZERO;
-
-    for i in 0..TRIT_LEN {
-        let a = lhs.get_trit(i);
-        let b = rhs.get_trit(i);
-        let c = f(a, b);
-        tryte = tryte.set_trit(i, c);
-    }
-
-    tryte
 }
 
 impl From<Trit> for Tryte {
@@ -204,73 +137,6 @@ impl TryInto<Trit> for Tryte {
     }
 }
 
-impl Into<i16> for Tryte {
-    fn into(self) -> i16 {
-        let mut n = 0i16;
-
-        for i in (0..TRIT_LEN).rev() {
-            let trit = self.get_trit(i);
-            let t: i16 = trit.into();
-            n = n * 3 + t;
-        }
-
-        n
-    }
-}
-
-impl TryFrom<i16> for Tryte {
-    type Error = Error;
-
-    fn try_from(n: i16) -> Result<Self> {
-        if n < MIN_VALUE || MAX_VALUE < n {
-            return Err(Error::IntegerOutOfBounds(
-                MIN_VALUE as i64,
-                MAX_VALUE as i64,
-                n as i64,
-            ));
-        }
-
-        let sign_trit = if n < 0 { trit::NEG } else { trit::POS };
-        let mut n = n.abs();
-        let mut tryte = ZERO;
-
-        for i in 0..TRIT_LEN {
-            let rem_trit = match n % 3 {
-                1 => trit::POS,
-                0 => trit::ZERO,
-                _ => {
-                    n += 1;
-                    trit::NEG
-                }
-            };
-
-            let trit = sign_trit * rem_trit;
-            tryte = tryte.set_trit(i, trit);
-            n /= 3;
-        }
-
-        Ok(tryte)
-    }
-}
-
-impl PartialOrd for Tryte {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let mut cmp_trit = trit::ZERO;
-
-        for i in (0..TRIT_LEN).rev() {
-            let a = self.get_trit(i);
-            let b = other.get_trit(i);
-            cmp_trit = a.tcmp(b);
-
-            if cmp_trit != trit::ZERO {
-                break;
-            }
-        }
-
-        Some(cmp_trit.into())
-    }
-}
-
 impl ops::Neg for Tryte {
     type Output = Tryte;
 
@@ -280,51 +146,8 @@ impl ops::Neg for Tryte {
     }
 }
 
-impl ops::Not for Tryte {
-    type Output = Tryte;
-
-    fn not(self) -> Self::Output {
-        -self
-    }
-}
-
-impl ops::BitAnd for Tryte {
-    type Output = Tryte;
-
-    fn bitand(self, rhs: Tryte) -> Self::Output {
-        zip(self, rhs, Trit::bitand)
-    }
-}
-
-impl ops::BitOr for Tryte {
-    type Output = Tryte;
-
-    fn bitor(self, rhs: Tryte) -> Self::Output {
-        zip(self, rhs, Trit::bitor)
-    }
-}
-
-impl ops::Add for Tryte {
-    type Output = Tryte;
-
-    fn add(self, rhs: Tryte) -> Self::Output {
-        let (sum, _) = self.add_with_carry(rhs, trit::ZERO);
-        sum
-    }
-}
-
-pub struct DisplayHytes(Tryte);
-
-impl fmt::Display for DisplayHytes {
+impl fmt::Display for Tryte {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt_hytes(f)
-    }
-}
-
-pub struct DisplayTrits(Tryte);
-
-impl fmt::Display for DisplayTrits {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt_trits(f)
+        self.fmt_hytes(f)
     }
 }
