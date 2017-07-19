@@ -99,6 +99,56 @@ impl<'a> Ternary<'a> {
         Ok(())
     }
 
+    pub fn read_hyte_str(&mut self, s: &str) -> Result<()> {
+        let len = self.tryte_len() * 2;
+        if s.len() != len {
+            return Err(Error::InvalidDataLength(len, s.len()));
+        }
+
+        let mut s = s;
+        for i in (0..self.tryte_len()).rev() {
+            let (substr, _s) = s.split_at(2);
+            s = _s;
+            let tryte = Tryte::from_hyte_str(substr)?;
+            self.trytes[i] = tryte;
+        }
+
+        Ok(())
+    }
+
+    pub fn read_trit_str(&mut self, s: &str) -> Result<()> {
+        if s.len() != self.trit_len() {
+            return Err(Error::InvalidDataLength(self.trit_len(), s.len()));
+        }
+
+        for (i, c) in s.chars().rev().enumerate() {
+            let trit = Trit::try_from(c)?;
+            self.set_trit(i, trit);
+        }
+
+        Ok(())
+    }
+
+    fn read_trits(&mut self, trits: &[Trit]) -> Result<()> {
+        if trits.len() != self.trit_len() {
+            return Err(Error::InvalidDataLength(self.trit_len(), trits.len()));
+        }
+
+        for (i, &trit) in trits.iter().enumerate() {
+            self.set_trit(i, trit);
+        }
+
+        Ok(())
+    }
+
+    pub fn display_hytes(&self) -> DisplayHytes {
+        DisplayHytes(self)
+    }
+
+    pub fn display_trits(&self) -> DisplayTrits {
+        DisplayTrits(self)
+    }
+
     pub fn negate(&mut self) {
         self.mutate_trytes(Tryte::neg);
     }
@@ -149,56 +199,6 @@ impl<'a> Ternary<'a> {
         cmp_trit
     }
 
-    pub fn read_hyte_str(&mut self, s: &str) -> Result<()> {
-        let len = self.tryte_len() * 2;
-        if s.len() != len {
-            return Err(Error::InvalidDataLength(len, s.len()));
-        }
-
-        let mut s = s;
-        for i in 0..self.tryte_len() {
-            let (substr, _s) = s.split_at(2);
-            s = _s;
-            let tryte = Tryte::from_hyte_str(substr)?;
-            self.trytes[i] = tryte;
-        }
-
-        Ok(())
-    }
-
-    pub fn read_trit_str(&mut self, s: &str) -> Result<()> {
-        if s.len() != self.trit_len() {
-            return Err(Error::InvalidDataLength(self.trit_len(), s.len()));
-        }
-
-        for (i, c) in s.chars().rev().enumerate() {
-            let trit = Trit::try_from(c)?;
-            self.set_trit(i, trit);
-        }
-
-        Ok(())
-    }
-
-    fn read_trits(&mut self, trits: &[Trit]) -> Result<()> {
-        if trits.len() != self.trit_len() {
-            return Err(Error::InvalidDataLength(self.trit_len(), trits.len()));
-        }
-
-        for (i, &trit) in trits.iter().enumerate() {
-            self.set_trit(i, trit);
-        }
-
-        Ok(())
-    }
-
-    pub fn display_hytes(&self) -> DisplayHytes {
-        DisplayHytes(self)
-    }
-
-    pub fn display_trits(&self) -> DisplayTrits {
-        DisplayTrits(self)
-    }
-
     fn mutate_trits<F: Fn(Trit) -> Trit>(&mut self, f: F) {
         for i in 0..self.trit_len() {
             let trit = self.get_trit(i);
@@ -226,7 +226,8 @@ impl<'a> Ternary<'a> {
         for i in 0..self.tryte_len() {
             let a = self.trytes[i];
             let b = other.trytes[i];
-            self.trytes[i] = f(a, b);
+            let c = f(a, b);
+            self.trytes[i] = c;
         }
     }
 }
