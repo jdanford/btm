@@ -410,7 +410,7 @@ fn ternary_add() {
 
 fn tryte4_add(trytes1: &[Tryte], trytes2: &[Tryte]) -> Result<Vec<Tryte>> {
     tryte4_mutate2(trytes1, trytes2, |ref mut ternary1, ref ternary2| {
-        let _ = ternary1.add_with_carry(ternary2, trit::ZERO);
+        let _ = ternary1.add(ternary2, trit::ZERO);
         Ok(())
     })
 }
