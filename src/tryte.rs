@@ -34,7 +34,10 @@ impl Tryte {
 
     pub fn set_trit(self, i: usize, trit: Trit) -> Tryte {
         let shf = (i as u16) * 2;
-        let bits = (self.0 | trit.0 << shf) & BITMASK;
+        let zero_bits = !(0b11 << shf);
+        let tryte_bits = self.0 & zero_bits;
+        let trit_bits = trit.0 << shf;
+        let bits = (tryte_bits | trit_bits) & BITMASK;
         Tryte(bits)
     }
 
