@@ -5,7 +5,10 @@ use registers::{StandardRegister, SystemRegister};
 
 #[test]
 fn standard_register_from_trit4() {
-    assert_eq!(Ok(registers::ZERO), StandardRegister::try_from(0b00_00_00_00));
+    assert_eq!(
+        Ok(registers::ZERO),
+        StandardRegister::try_from(0b00_00_00_00)
+    );
     assert_eq!(Ok(registers::LO), StandardRegister::try_from(0b00_00_00_01));
     assert_eq!(Ok(registers::HI), StandardRegister::try_from(0b00_00_01_11));
     assert_eq!(Ok(registers::SP), StandardRegister::try_from(0b00_00_01_00));

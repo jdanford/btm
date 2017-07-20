@@ -29,8 +29,9 @@ impl<'a> Ternary<'a> {
     }
 
     pub fn range(&self) -> i64 {
-        let n = self.trit_len() as u32;
-        3i64.pow(n)
+        let base = 3i64;
+        let exp = self.trit_len() as u32;
+        base.pow(exp)
     }
 
     pub fn min_value(&self) -> i64 {
@@ -51,6 +52,12 @@ impl<'a> Ternary<'a> {
         let (tryte_index, trit_index) = indices(i);
         let tryte = self.trytes[tryte_index];
         self.trytes[tryte_index] = tryte.set_trit(trit_index, trit);
+    }
+
+    pub fn clear(&mut self) {
+        for i in 0..self.tryte_len() {
+            self.trytes[i] = tryte::ZERO;
+        }
     }
 
     pub fn read_bytes<R: ReadBytesExt>(&mut self, reader: &mut R) -> Result<()> {
@@ -214,7 +221,7 @@ impl<'a> Ternary<'a> {
     }
 
     fn mutate2_trits<F: Fn(Trit, Trit) -> Trit>(&mut self, rhs: &Ternary, f: F) {
-        for i in 0..self.trit_len() {
+        for i in 0..rhs.trit_len() {
             let a = self.get_trit(i);
             let b = rhs.get_trit(i);
             let c = f(a, b);
@@ -223,7 +230,7 @@ impl<'a> Ternary<'a> {
     }
 
     fn mutate2_trytes<F: Fn(Tryte, Tryte) -> Tryte>(&mut self, rhs: &Ternary, f: F) {
-        for i in 0..self.tryte_len() {
+        for i in 0..rhs.tryte_len() {
             let a = self.trytes[i];
             let b = rhs.trytes[i];
             let c = f(a, b);
