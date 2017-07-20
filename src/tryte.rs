@@ -16,7 +16,7 @@ const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 const HYTE_BIT_WIDTH: usize = 6;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Tryte(pub u16);
 
 pub const ZERO: Tryte = Tryte(trit::BIN_ZERO);
@@ -143,6 +143,12 @@ impl ops::Neg for Tryte {
     fn neg(self) -> Self::Output {
         let bits = self.0 ^ self.negation_bits();
         Tryte(bits)
+    }
+}
+
+impl fmt::Debug for Tryte {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Tryte({:012b})", self.0)
     }
 }
 

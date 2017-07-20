@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::cmp::Ordering;
+use std::fmt;
 use std::ops;
 
 use phf;
@@ -19,7 +20,7 @@ pub const CHAR_POS: char = '1';
 pub const CHAR_INVALID: char = '?';
 pub const CHAR_NEG: char = 'T';
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, Ord, PartialEq)]
 pub struct Trit(pub u16);
 
 pub const ZERO: Trit = Trit(BIN_ZERO);
@@ -42,6 +43,14 @@ impl Trit {
         let (sum, carry) = TRIT3_TO_SUM_AND_CARRY[i];
         (Trit(sum), Trit(carry))
     }
+}
+
+fn trit2_index(a: Trit, b: Trit) -> usize {
+    (a.0 << 2 | b.0) as usize
+}
+
+fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
+    (a.0 << 4 | b.0 << 2 | c.0) as usize
 }
 
 static TRIT_TO_I16: [i16; 4] = [0, 1, 0, -1];
@@ -174,10 +183,8 @@ impl ops::Mul for Trit {
     }
 }
 
-fn trit2_index(a: Trit, b: Trit) -> usize {
-    (a.0 << 2 | b.0) as usize
-}
-
-fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
-    (a.0 << 4 | b.0 << 2 | c.0) as usize
+impl fmt::Debug for Trit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Trit({:02b})", self.0)
+    }
 }
