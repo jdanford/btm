@@ -370,51 +370,83 @@ fn tryte4_add(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
 fn ternary_multiply() {
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_NEG4096, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_NEG64, &TRYTE2_0)[..]);
+    assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_1, &TRYTE2_0)[..]);
+    assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_8, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_64, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_4096, &TRYTE2_0)[..]);
 
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_NEG4096)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_NEG64)[..]);
+    assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_NEG8)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_1)[..]);
+    assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_8)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_64)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_4096)[..]);
 
     assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_NEG4096, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_NEG64, &TRYTE2_1)[..]);
+    assert_eq!(&TRYTE4_NEG8, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_NEG1, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_1, &tryte4_mul(&TRYTE2_1, &TRYTE2_1)[..]);
+    assert_eq!(&TRYTE4_8, &tryte4_mul(&TRYTE2_8, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_64, &TRYTE2_1)[..]);
     assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_4096, &TRYTE2_1)[..]);
 
     assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_1, &TRYTE2_NEG4096)[..]);
     assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_1, &TRYTE2_NEG64)[..]);
+    assert_eq!(&TRYTE4_NEG8, &tryte4_mul(&TRYTE2_1, &TRYTE2_NEG8)[..]);
     assert_eq!(&TRYTE4_NEG1, &tryte4_mul(&TRYTE2_1, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_1, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_1, &tryte4_mul(&TRYTE2_1, &TRYTE2_1)[..]);
+    assert_eq!(&TRYTE4_8, &tryte4_mul(&TRYTE2_1, &TRYTE2_8)[..]);
     assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_1, &TRYTE2_64)[..]);
     assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_1, &TRYTE2_4096)[..]);
 
     assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_NEG4096, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_NEG64, &TRYTE2_NEG1)[..]);
+    assert_eq!(&TRYTE4_8, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_1, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_0, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_NEG1, &tryte4_mul(&TRYTE2_1, &TRYTE2_NEG1)[..]);
+    assert_eq!(&TRYTE4_NEG8, &tryte4_mul(&TRYTE2_8, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_64, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_4096, &TRYTE2_NEG1)[..]);
 
     assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_NEG4096)[..]);
     assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_NEG64)[..]);
+    assert_eq!(&TRYTE4_8, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_NEG8)[..]);
     assert_eq!(&TRYTE4_1, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_NEG1)[..]);
     assert_eq!(&TRYTE4_0, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_0)[..]);
     assert_eq!(&TRYTE4_NEG1, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_1)[..]);
+    assert_eq!(&TRYTE4_NEG8, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_8)[..]);
     assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_64)[..]);
     assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_NEG1, &TRYTE2_4096)[..]);
+
+    assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_8, &TRYTE2_8)[..]);
+    assert_eq!(&TRYTE4_64, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_NEG8)[..]);
+    assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_8, &TRYTE2_NEG8)[..]);
+    assert_eq!(&TRYTE4_NEG64, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_8)[..]);
+
+    assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_8, &TRYTE2_512)[..]);
+    assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_NEG512)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_8, &TRYTE2_NEG512)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_NEG8, &TRYTE2_512)[..]);
+
+    // assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_512, &TRYTE2_8)[..]);
+    // assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_NEG512, &TRYTE2_NEG8)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_512, &TRYTE2_NEG8)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_NEG512, &TRYTE2_8)[..]);
+
+    // assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_64, &TRYTE2_64)[..]);
+    // assert_eq!(&TRYTE4_4096, &tryte4_mul(&TRYTE2_NEG64, &TRYTE2_NEG64)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_64, &TRYTE2_NEG64)[..]);
+    assert_eq!(&TRYTE4_NEG4096, &tryte4_mul(&TRYTE2_NEG64, &TRYTE2_64)[..]);
 }
 
 fn tryte4_mul(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
