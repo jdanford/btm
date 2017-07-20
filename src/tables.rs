@@ -1,6 +1,9 @@
+use std::u8;
+use std::u16;
+
 lazy_static! {
     pub static ref TRIT2_TO_AND: [u16; 16] = {
-        let mut table = [0; 16];
+        let mut table = [u16::MAX; 16];
 
         table[0b00_00] = 0b00;
         table[0b00_01] = 0b00;
@@ -16,7 +19,7 @@ lazy_static! {
     };
 
     pub static ref TRIT2_TO_CMP: [u16; 16] = {
-        let mut table = [0; 16];
+        let mut table = [u16::MAX; 16];
 
         table[0b00_00] = 0b00;
         table[0b00_01] = 0b11;
@@ -32,7 +35,7 @@ lazy_static! {
     };
 
     pub static ref TRIT2_TO_OR: [u16; 16] = {
-        let mut table = [0; 16];
+        let mut table = [u16::MAX; 16];
 
         table[0b00_00] = 0b00;
         table[0b00_01] = 0b01;
@@ -48,7 +51,7 @@ lazy_static! {
     };
 
     pub static ref TRIT2_TO_PRODUCT: [u16; 16] = {
-        let mut table = [0; 16];
+        let mut table = [u16::MAX; 16];
 
         table[0b00_00] = 0b00;
         table[0b00_01] = 0b00;
@@ -64,7 +67,7 @@ lazy_static! {
     };
 
     pub static ref TRIT3_TO_SUM_AND_CARRY: [(u16, u16); 64] = {
-        let mut table = [(0, 0); 64];
+        let mut table = [(u16::MAX, u16::MAX); 64];
 
         table[0b00_00_00] = (0b00, 0b00);
         table[0b00_00_01] = (0b01, 0b00);
@@ -98,7 +101,7 @@ lazy_static! {
     };
 
     pub static ref TRIT4_TO_U8: [u8; 256] = {
-        let mut table = [0; 256];
+        let mut table = [u8::MAX; 256];
 
         table[0b00_00_00_00] = 0;
         table[0b00_00_00_01] = 1;

@@ -1,3 +1,8 @@
+use std::convert::TryFrom;
+
+use tables::TRIT4_TO_U8;
+use error::{Error, Result};
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct StandardRegister(pub u8);
 
@@ -26,6 +31,19 @@ pub const T3: StandardRegister = StandardRegister(21);
 pub const T4: StandardRegister = StandardRegister(22);
 pub const T5: StandardRegister = StandardRegister(23);
 
+impl TryFrom<u8> for StandardRegister {
+    type Error = Error;
+
+    fn try_from(trit4: u8) -> Result<StandardRegister> {
+        let i = TRIT4_TO_U8[trit4 as usize];
+        if i > T5.0 {
+            return Err(Error::InvalidIndex(i as usize));
+        }
+
+        Ok(StandardRegister(i))
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct SystemRegister(pub u8);
 
@@ -33,3 +51,16 @@ pub const EHA: SystemRegister = SystemRegister(0);
 pub const ERA: SystemRegister = SystemRegister(1);
 pub const EC: SystemRegister = SystemRegister(2);
 pub const ED: SystemRegister = SystemRegister(3);
+
+impl TryFrom<u8> for SystemRegister {
+    type Error = Error;
+
+    fn try_from(trit4: u8) -> Result<SystemRegister> {
+        let i = TRIT4_TO_U8[trit4 as usize];
+        if i > ED.0 {
+            return Err(Error::InvalidIndex(i as usize));
+        }
+
+        Ok(SystemRegister(i))
+    }
+}

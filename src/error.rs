@@ -7,6 +7,7 @@ pub enum Error {
     InvalidBitPattern(u64),
     InvalidCharacter(char),
     InvalidDataLength(usize, usize),
+    InvalidIndex(usize),
     InvalidString(String),
     IoError(io::Error),
 }
