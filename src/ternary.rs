@@ -190,6 +190,29 @@ impl<'a> Ternary<'a> {
         carry
     }
 
+    fn add_mul(&mut self, rhs: &Ternary, sign: Trit, offset: usize) -> Trit {
+        let mut carry = trit::ZERO;
+
+        for i in 0..rhs.trit_len() {
+            let a = self.get_trit(i + offset);
+            let b = rhs.get_trit(i);
+            let (c, _carry) = a.add_with_carry(b * sign, carry);
+            carry = _carry;
+            self.set_trit(i + offset, c);
+        }
+
+        carry
+    }
+
+    pub fn multiply(&mut self, lhs: &Ternary, rhs: &Ternary) {
+        let len = rhs.trit_len();
+        for i in 0..len {
+            let sign = rhs.get_trit(i);
+            let carry = self.add_mul(lhs, sign, i);
+            self.set_trit(i + len, carry);
+        }
+    }
+
     pub fn compare(&self, rhs: &Ternary) -> Trit {
         let mut cmp_trit = trit::ZERO;
 
