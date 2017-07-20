@@ -8,6 +8,7 @@ extern crate lazy_static;
 extern crate phf;
 
 mod error;
+mod tables;
 mod trit;
 mod hyte;
 mod tryte;

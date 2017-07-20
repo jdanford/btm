@@ -4,6 +4,7 @@ use std::ops;
 
 use phf;
 
+use tables::*;
 use error::{Error, Result};
 
 pub const BITMASK: u16 = 0b11;
@@ -15,115 +16,8 @@ pub const BIN_NEG: u16 = 0b11;
 
 pub const CHAR_ZERO: char = '0';
 pub const CHAR_POS: char = '1';
+pub const CHAR_INVALID: char = '?';
 pub const CHAR_NEG: char = 'T';
-
-lazy_static! {
-    static ref TRIT2_TO_AND: [u16; 16] = {
-        let mut table = [0; 16];
-
-        table[0b00_00] = BIN_ZERO;
-        table[0b00_01] = BIN_ZERO;
-        table[0b00_11] = BIN_NEG;
-        table[0b01_00] = BIN_ZERO;
-        table[0b01_01] = BIN_POS;
-        table[0b01_11] = BIN_NEG;
-        table[0b11_00] = BIN_NEG;
-        table[0b11_01] = BIN_NEG;
-        table[0b11_11] = BIN_NEG;
-
-        table
-    };
-
-    static ref TRIT2_TO_CMP: [u16; 16] = {
-        let mut table = [0; 16];
-
-        table[0b00_00] = BIN_ZERO;
-        table[0b00_01] = BIN_NEG;
-        table[0b00_11] = BIN_POS;
-        table[0b01_00] = BIN_POS;
-        table[0b01_01] = BIN_ZERO;
-        table[0b01_11] = BIN_POS;
-        table[0b11_00] = BIN_NEG;
-        table[0b11_01] = BIN_NEG;
-        table[0b11_11] = BIN_ZERO;
-
-        table
-    };
-
-    static ref TRIT2_TO_OR: [u16; 16] = {
-        let mut table = [0; 16];
-
-        table[0b00_00] = BIN_ZERO;
-        table[0b00_01] = BIN_POS;
-        table[0b00_11] = BIN_ZERO;
-        table[0b01_00] = BIN_POS;
-        table[0b01_01] = BIN_POS;
-        table[0b01_11] = BIN_POS;
-        table[0b11_00] = BIN_ZERO;
-        table[0b11_01] = BIN_POS;
-        table[0b11_11] = BIN_NEG;
-
-        table
-    };
-
-    static ref TRIT2_TO_PRODUCT: [u16; 16] = {
-        let mut table = [0; 16];
-
-        table[0b00_00] = BIN_ZERO;
-        table[0b00_01] = BIN_ZERO;
-        table[0b00_11] = BIN_ZERO;
-        table[0b01_00] = BIN_ZERO;
-        table[0b01_01] = BIN_POS;
-        table[0b01_11] = BIN_NEG;
-        table[0b11_00] = BIN_ZERO;
-        table[0b11_01] = BIN_NEG;
-        table[0b11_11] = BIN_POS;
-
-        table
-    };
-
-    static ref TRIT3_TO_SUM_AND_CARRY: [(u16, u16); 64] = {
-        let mut table = [(0, 0); 64];
-
-        table[0b00_00_00] = (BIN_ZERO, BIN_ZERO);
-        table[0b00_00_01] = (BIN_POS, BIN_ZERO);
-        table[0b00_00_11] = (BIN_NEG, BIN_ZERO);
-        table[0b00_01_00] = (BIN_POS, BIN_ZERO);
-        table[0b00_01_01] = (BIN_NEG, BIN_POS);
-        table[0b00_01_11] = (BIN_ZERO, BIN_ZERO);
-        table[0b00_11_00] = (BIN_NEG, BIN_ZERO);
-        table[0b00_11_01] = (BIN_ZERO, BIN_ZERO);
-        table[0b00_11_11] = (BIN_POS, BIN_NEG);
-        table[0b01_00_00] = (BIN_POS, BIN_ZERO);
-        table[0b01_00_01] = (BIN_NEG, BIN_POS);
-        table[0b01_00_11] = (BIN_ZERO, BIN_ZERO);
-        table[0b01_01_00] = (BIN_NEG, BIN_POS);
-        table[0b01_01_01] = (BIN_ZERO, BIN_POS);
-        table[0b01_01_11] = (BIN_POS, BIN_ZERO);
-        table[0b01_11_00] = (BIN_ZERO, BIN_ZERO);
-        table[0b01_11_01] = (BIN_POS, BIN_ZERO);
-        table[0b01_11_11] = (BIN_NEG, BIN_ZERO);
-        table[0b11_00_00] = (BIN_NEG, BIN_ZERO);
-        table[0b11_00_01] = (BIN_POS, BIN_ZERO);
-        table[0b11_00_11] = (BIN_POS, BIN_NEG);
-        table[0b11_01_00] = (BIN_ZERO, BIN_ZERO);
-        table[0b11_01_01] = (BIN_POS, BIN_ZERO);
-        table[0b11_01_11] = (BIN_NEG, BIN_ZERO);
-        table[0b11_11_00] = (BIN_POS, BIN_NEG);
-        table[0b11_11_01] = (BIN_NEG, BIN_ZERO);
-        table[0b11_11_11] = (BIN_ZERO, BIN_NEG);
-
-        table
-    };
-}
-
-fn trit2_index(a: Trit, b: Trit) -> usize {
-    (a.0 << 2 | b.0) as usize
-}
-
-fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
-    (a.0 << 4 | b.0 << 2 | c.0) as usize
-}
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq)]
 pub struct Trit(pub u16);
@@ -174,7 +68,7 @@ impl TryFrom<i16> for Trit {
     }
 }
 
-static TRIT_TO_CHAR: [char; 4] = [CHAR_ZERO, CHAR_POS, CHAR_ZERO, CHAR_NEG];
+static TRIT_TO_CHAR: [char; 4] = [CHAR_ZERO, CHAR_POS, CHAR_INVALID, CHAR_NEG];
 
 impl Into<char> for Trit {
     fn into(self) -> char {
@@ -278,4 +172,12 @@ impl ops::Mul for Trit {
         let bits = TRIT2_TO_PRODUCT[i];
         Trit(bits)
     }
+}
+
+fn trit2_index(a: Trit, b: Trit) -> usize {
+    (a.0 << 2 | b.0) as usize
+}
+
+fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
+    (a.0 << 4 | b.0 << 2 | c.0) as usize
 }

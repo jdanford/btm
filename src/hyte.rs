@@ -1,5 +1,6 @@
 use phf;
 
+use trit::CHAR_INVALID;
 use error::{Error, Result};
 
 static CHAR_TO_HYTE: phf::Map<char, u8> =
@@ -41,7 +42,7 @@ pub fn try_hyte_from_char(c: char) -> Result<u8> {
 
 lazy_static! {
     static ref HYTE_TO_CHAR: [char; 64] = {
-        let mut table = ['?'; 64];
+        let mut table = [CHAR_INVALID; 64];
 
         table[0b11_11_11] = 'm';
         table[0b11_11_00] = 'l';

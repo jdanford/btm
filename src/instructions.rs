@@ -1,5 +1,6 @@
 use trit::Trit;
 use registers::*;
+use opcodes;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Instruction {
@@ -47,4 +48,48 @@ enum Instruction {
     Li(StandardRegister, i32),
     La(StandardRegister, i32),
     Nop,
+}
+
+impl Instruction {
+    fn opcode(&self) -> Option<u8> {
+        match *self {
+            Instruction::And(_, _, _) => Some(opcodes::AND),
+            Instruction::Or(_, _, _) => Some(opcodes::OR),
+            Instruction::Tmul(_, _, _) => Some(opcodes::TMUL),
+            Instruction::Tcmp(_, _, _) => Some(opcodes::TCMP),
+            Instruction::Cmp(_, _, _) => Some(opcodes::CMP),
+            Instruction::Shf(_, _, _) => Some(opcodes::SHF),
+            Instruction::Add(_, _, _) => Some(opcodes::ADD),
+            Instruction::Mul(_, _) => Some(opcodes::MUL),
+            Instruction::Div(_, _) => Some(opcodes::DIV),
+            Instruction::Andi(_, _, _) => Some(opcodes::ANDI),
+            Instruction::Ori(_, _, _) => Some(opcodes::ORI),
+            Instruction::Tmuli(_, _, _) => Some(opcodes::TMULI),
+            Instruction::Tcmpi(_, _, _) => Some(opcodes::TCMPI),
+            Instruction::Shfi(_, _, _) => Some(opcodes::SHFI),
+            Instruction::Addi(_, _, _) => Some(opcodes::ADDI),
+            Instruction::Lui(_, _) => Some(opcodes::LUI),
+            Instruction::Lsr(_, _) => Some(opcodes::LSR),
+            Instruction::Ssr(_, _) => Some(opcodes::SSR),
+            Instruction::Lt(_, _, _) => Some(opcodes::LT),
+            Instruction::Lh(_, _, _) => Some(opcodes::LH),
+            Instruction::Lw(_, _, _) => Some(opcodes::LW),
+            Instruction::St(_, _, _) => Some(opcodes::ST),
+            Instruction::Sh(_, _, _) => Some(opcodes::SH),
+            Instruction::Sw(_, _, _) => Some(opcodes::SW),
+            Instruction::BT(_, _, _, _) => Some(opcodes::BT),
+            Instruction::B0(_, _, _, _) => Some(opcodes::B0),
+            Instruction::B1(_, _, _, _) => Some(opcodes::B1),
+            Instruction::BT0(_, _, _, _) => Some(opcodes::BT0),
+            Instruction::BT1(_, _, _, _) => Some(opcodes::BT1),
+            Instruction::B01(_, _, _, _) => Some(opcodes::B01),
+            Instruction::Jmp(_) => Some(opcodes::JMP),
+            Instruction::Call(_) => Some(opcodes::CALL),
+            Instruction::Jmpr(_) => Some(opcodes::JMPR),
+            Instruction::Callr(_) => Some(opcodes::CALLR),
+            Instruction::Syscall => Some(opcodes::SYSCALL),
+            Instruction::Break => Some(opcodes::BREAK),
+            _ => None,
+        }
+    }
 }
