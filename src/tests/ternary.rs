@@ -6,81 +6,73 @@ use tryte::Tryte;
 use ternary::*;
 use tests::constants::*;
 
-macro_rules! ternary {
-    ($expr:expr) => { Ternary::new(&mut $expr) };
-}
-
 fn clone_slice<T: Clone>(slice: &[T]) -> Vec<T> {
     let mut vec = Vec::new();
     vec.extend_from_slice(slice);
     vec
 }
 
-fn with_cloned_trytes<F: FnMut(&mut Ternary)>(tryte_slice: &[Tryte], mut f: F) -> Vec<Tryte> {
-    let mut trytes = clone_slice(tryte_slice);
-    f(&mut ternary!(trytes));
+fn with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte]),
+{
+    let mut trytes = clone_slice(trytes);
+    f(&mut trytes[..]);
     trytes
 }
 
-fn with_cloned_trytes2<F: FnMut(&mut Ternary, &Ternary)>(
-    tryte_slice1: &[Tryte],
-    tryte_slice2: &[Tryte],
-    mut f: F,
-) -> Vec<Tryte> {
-    let mut trytes1 = clone_slice(tryte_slice1);
-    let mut trytes2 = clone_slice(tryte_slice2);
-    f(&mut ternary!(trytes1), &ternary!(trytes2));
+fn with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte], &[Tryte]),
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2);
     trytes1
 }
 
-fn with_cloned_trytes3<F: FnMut(&mut Ternary, &Ternary, &Ternary)>(
-    tryte_slice1: &[Tryte],
-    tryte_slice2: &[Tryte],
-    tryte_slice3: &[Tryte],
+fn with_cloned_trytes3<F>(
+    trytes1: &[Tryte],
+    trytes2: &[Tryte],
+    trytes3: &[Tryte],
     mut f: F,
-) -> Vec<Tryte> {
-    let mut trytes1 = clone_slice(tryte_slice1);
-    let mut trytes2 = clone_slice(tryte_slice2);
-    let mut trytes3 = clone_slice(tryte_slice3);
-    f(
-        &mut ternary!(trytes1),
-        &ternary!(trytes2),
-        &ternary!(trytes3),
-    );
+) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte], &[Tryte], &[Tryte]),
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2, &trytes3);
     trytes1
 }
 
-fn try_with_cloned_trytes<F: FnMut(&mut Ternary) -> Result<()>>(
-    tryte_slice: &[Tryte],
-    mut f: F,
-) -> Result<Vec<Tryte>> {
-    let mut trytes = clone_slice(tryte_slice);
-    f(&mut ternary!(trytes))?;
+fn try_with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
+where
+    F: FnMut(&mut [Tryte]) -> Result<()>,
+{
+    let mut trytes = clone_slice(trytes);
+    f(&mut trytes[..])?;
     Ok(trytes)
 }
 
-fn try_with_cloned_trytes2<F: FnMut(&mut Ternary, &Ternary) -> Result<()>>(
-    tryte_slice1: &[Tryte],
-    tryte_slice2: &[Tryte],
-    mut f: F,
-) -> Result<Vec<Tryte>> {
-    let mut trytes1 = clone_slice(tryte_slice1);
-    let mut trytes2 = clone_slice(tryte_slice2);
-    f(&mut ternary!(trytes1), &ternary!(trytes2))?;
+fn try_with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
+where
+    F: FnMut(&mut [Tryte], &[Tryte]) -> Result<()>,
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2)?;
     Ok(trytes1)
 }
 
 #[test]
 fn ternary_into_i64() {
-    assert_eq!(WORD_MIN, ternary!(TRYTE4_MIN).into());
-    assert_eq!(-1i64, ternary!(TRYTE4_NEG1).into());
-    assert_eq!(0i64, ternary!(TRYTE4_0).into());
-    assert_eq!(1i64, ternary!(TRYTE4_1).into());
-    assert_eq!(WORD_MAX, ternary!(TRYTE4_MAX).into());
+    assert_eq!(WORD_MIN, TRYTE4_MIN.into_i64());
+    assert_eq!(-1i64, TRYTE4_NEG1.into_i64());
+    assert_eq!(0i64, TRYTE4_0.into_i64());
+    assert_eq!(1i64, TRYTE4_1.into_i64());
+    assert_eq!(WORD_MAX, TRYTE4_MAX.into_i64());
 }
 
 #[test]
-fn ternary_read_int() {
+fn ternary_read_i64() {
     assert_eq!(&TRYTE4_MIN, &tryte4_from_int(WORD_MIN).unwrap()[..]);
     assert_eq!(&TRYTE4_NEG1, &tryte4_from_int(-1).unwrap()[..]);
     assert_eq!(&TRYTE4_0, &tryte4_from_int(0).unwrap()[..]);
@@ -92,7 +84,7 @@ fn ternary_read_int() {
 }
 
 fn tryte4_from_int(n: i64) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_int(n))
+    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_i64(n))
 }
 
 #[test]
@@ -112,16 +104,16 @@ fn tryte4_from_bytes(bytes: &[u8]) -> Result<Vec<Tryte>> {
 
 #[test]
 fn ternary_write_bytes() {
-    assert_eq!(&BYTES_MIN, &get_bytes(&ternary!(TRYTE4_MIN))[..]);
-    assert_eq!(&BYTES_NEG1, &get_bytes(&ternary!(TRYTE4_NEG1))[..]);
-    assert_eq!(&BYTES_0, &get_bytes(&ternary!(TRYTE4_0))[..]);
-    assert_eq!(&BYTES_1, &get_bytes(&ternary!(TRYTE4_1))[..]);
-    assert_eq!(&BYTES_MAX, &get_bytes(&ternary!(TRYTE4_MAX))[..]);
+    assert_eq!(&BYTES_MIN, &get_bytes(&TRYTE4_MIN[..])[..]);
+    assert_eq!(&BYTES_NEG1, &get_bytes(&TRYTE4_NEG1[..])[..]);
+    assert_eq!(&BYTES_0, &get_bytes(&TRYTE4_0[..])[..]);
+    assert_eq!(&BYTES_1, &get_bytes(&TRYTE4_1[..])[..]);
+    assert_eq!(&BYTES_MAX, &get_bytes(&TRYTE4_MAX[..])[..]);
 }
 
-fn get_bytes(ternary: &Ternary) -> Vec<u8> {
+fn get_bytes(trytes: &[Tryte]) -> Vec<u8> {
     let mut bytes = vec![];
-    ternary.write_bytes(&mut bytes).unwrap();
+    trytes.write_bytes(&mut bytes).unwrap();
     bytes
 }
 
@@ -135,31 +127,22 @@ fn ternary_read_hytes() {
 }
 
 fn tryte4_from_hyte_str(s: &str) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_hyte_str(s))
+    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_hytes(s))
 }
 
 #[test]
 fn ternary_display_hytes() {
-    assert_eq!(
-        "0hmmmmmmmm",
-        format!("{}", ternary!(TRYTE4_MIN).display_hytes())
-    );
-    assert_eq!(
-        "0h0000000a",
-        format!("{}", ternary!(TRYTE4_NEG1).display_hytes())
-    );
-    assert_eq!(
-        "0h00000000",
-        format!("{}", ternary!(TRYTE4_0).display_hytes())
-    );
-    assert_eq!(
-        "0h0000000A",
-        format!("{}", ternary!(TRYTE4_1).display_hytes())
-    );
-    assert_eq!(
-        "0hMMMMMMMM",
-        format!("{}", ternary!(TRYTE4_MAX).display_hytes())
-    );
+    assert_eq!("mmmmmmmm", get_hyte_str(&TRYTE4_MIN[..]));
+    assert_eq!("0000000a", get_hyte_str(&TRYTE4_NEG1[..]));
+    assert_eq!("00000000", get_hyte_str(&TRYTE4_0[..]));
+    assert_eq!("0000000A", get_hyte_str(&TRYTE4_1[..]));
+    assert_eq!("MMMMMMMM", get_hyte_str(&TRYTE4_MAX[..]));
+}
+
+fn get_hyte_str(trytes: &[Tryte]) -> String {
+    let mut s = String::new();
+    trytes.write_hytes(&mut s).unwrap();
+    s
 }
 
 #[test]
@@ -187,56 +170,35 @@ fn ternary_read_trits() {
 }
 
 fn tryte4_from_trit_str(s: &str) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_trit_str(s))
+    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_trits(s))
 }
 
 #[test]
 fn ternary_display_trits() {
-    assert_eq!(
-        "0tTTTTTTTTTTTTTTTTTTTTTTTT",
-        format!("{}", ternary!(TRYTE4_MIN).display_trits())
-    );
-    assert_eq!(
-        "0t00000000000000000000000T",
-        format!("{}", ternary!(TRYTE4_NEG1).display_trits())
-    );
-    assert_eq!(
-        "0t000000000000000000000000",
-        format!("{}", ternary!(TRYTE4_0).display_trits())
-    );
-    assert_eq!(
-        "0t000000000000000000000001",
-        format!("{}", ternary!(TRYTE4_1).display_trits())
-    );
-    assert_eq!(
-        "0t111111111111111111111111",
-        format!("{}", ternary!(TRYTE4_MAX).display_trits())
-    );
+    assert_eq!("TTTTTTTTTTTTTTTTTTTTTTTT", get_trit_str(&TRYTE4_MIN[..]));
+    assert_eq!("00000000000000000000000T", get_trit_str(&TRYTE4_NEG1[..]));
+    assert_eq!("000000000000000000000000", get_trit_str(&TRYTE4_0[..]));
+    assert_eq!("000000000000000000000001", get_trit_str(&TRYTE4_1[..]));
+    assert_eq!("111111111111111111111111", get_trit_str(&TRYTE4_MAX[..]));
+}
+
+fn get_trit_str(trytes: &[Tryte]) -> String {
+    let mut s = String::new();
+    trytes.write_trits(&mut s).unwrap();
+    s
 }
 
 #[test]
 fn ternary_cmp() {
-    assert_eq!(trit::ZERO, ternary!(TRYTE4_0).compare(&ternary!(TRYTE4_0)));
-    assert_eq!(trit::NEG, ternary!(TRYTE4_0).compare(&ternary!(TRYTE4_MAX)));
-    assert_eq!(trit::POS, ternary!(TRYTE4_0).compare(&ternary!(TRYTE4_MIN)));
-    assert_eq!(trit::POS, ternary!(TRYTE4_MAX).compare(&ternary!(TRYTE4_0)));
-    assert_eq!(
-        trit::POS,
-        ternary!(TRYTE4_MAX).compare(&ternary!(TRYTE4_MIN))
-    );
-    assert_eq!(
-        trit::ZERO,
-        ternary!(TRYTE4_MAX).compare(&ternary!(TRYTE4_MAX))
-    );
-    assert_eq!(trit::NEG, ternary!(TRYTE4_MIN).compare(&ternary!(TRYTE4_0)));
-    assert_eq!(
-        trit::NEG,
-        ternary!(TRYTE4_MIN).compare(&ternary!(TRYTE4_MAX))
-    );
-    assert_eq!(
-        trit::ZERO,
-        ternary!(TRYTE4_MIN).compare(&ternary!(TRYTE4_MIN))
-    );
+    assert_eq!(trit::ZERO, TRYTE4_0.compare(&TRYTE4_0));
+    assert_eq!(trit::NEG, TRYTE4_0.compare(&TRYTE4_MAX));
+    assert_eq!(trit::POS, TRYTE4_0.compare(&TRYTE4_MIN));
+    assert_eq!(trit::POS, TRYTE4_MAX.compare(&TRYTE4_0));
+    assert_eq!(trit::POS, TRYTE4_MAX.compare(&TRYTE4_MIN));
+    assert_eq!(trit::ZERO, TRYTE4_MAX.compare(&TRYTE4_MAX));
+    assert_eq!(trit::NEG, TRYTE4_MIN.compare(&TRYTE4_0));
+    assert_eq!(trit::NEG, TRYTE4_MIN.compare(&TRYTE4_MAX));
+    assert_eq!(trit::ZERO, TRYTE4_MIN.compare(&TRYTE4_MIN));
 }
 
 #[test]

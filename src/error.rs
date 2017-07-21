@@ -1,3 +1,4 @@
+use std::fmt;
 use std::io;
 use std::result;
 
@@ -10,6 +11,7 @@ pub enum Error {
     InvalidIndex(usize),
     InvalidString(String),
     IoError(io::Error),
+    FormatError(fmt::Error),
 }
 
 impl PartialEq for Error {
@@ -36,5 +38,11 @@ pub type Result<T> = result::Result<T, Error>;
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error::IoError(error)
+    }
+}
+
+impl From<fmt::Error> for Error {
+    fn from(error: fmt::Error) -> Error {
+        Error::FormatError(error)
     }
 }

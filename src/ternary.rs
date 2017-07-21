@@ -10,73 +10,65 @@ use trit::Trit;
 use tryte;
 use tryte::Tryte;
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Ternary<'a> {
-    pub trytes: &'a mut [Tryte],
-}
+pub trait Ternary {
+    fn trit_len(&self) -> usize;
+    fn tryte_len(&self) -> usize;
+    fn get_trit(&self, i: usize) -> Trit;
+    fn set_trit(&mut self, i: usize, trit: Trit);
+    fn get_tryte(&self, i: usize) -> Tryte;
+    fn set_tryte(&mut self, i: usize, tryte: Tryte);
 
-impl<'a> Ternary<'a> {
-    pub fn new(trytes: &'a mut [Tryte]) -> Ternary<'a> {
-        Ternary { trytes: trytes }
-    }
-
-    pub fn tryte_len(&self) -> usize {
-        self.trytes.len()
-    }
-
-    pub fn trit_len(&self) -> usize {
-        self.tryte_len() * tryte::TRIT_LEN
-    }
-
-    pub fn range(&self) -> i64 {
+    fn range(&self) -> i64 {
         let base = 3i64;
         let exp = self.trit_len() as u32;
         base.pow(exp)
     }
 
-    pub fn min_value(&self) -> i64 {
+    fn min_value(&self) -> i64 {
         -(self.range() - 1) / 2
     }
 
-    pub fn max_value(&self) -> i64 {
+    fn max_value(&self) -> i64 {
         (self.range() - 1) / 2
     }
 
-    pub fn get_trit(&self, i: usize) -> Trit {
-        let (tryte_index, trit_index) = indices(i);
-        let tryte = self.trytes[tryte_index];
-        tryte.get_trit(trit_index)
-    }
-
-    pub fn set_trit(&mut self, i: usize, trit: Trit) {
-        let (tryte_index, trit_index) = indices(i);
-        let tryte = self.trytes[tryte_index];
-        self.trytes[tryte_index] = tryte.set_trit(trit_index, trit);
-    }
-
-    pub fn clear(&mut self) {
+    fn clear(&mut self) {
         for i in 0..self.tryte_len() {
-            self.trytes[i] = tryte::ZERO;
+            self.set_tryte(i, tryte::ZERO);
         }
     }
 
-    pub fn read_bytes<R: ReadBytesExt>(&mut self, reader: &mut R) -> Result<()> {
+    fn read_bytes<R: ReadBytesExt>(&mut self, reader: &mut R) -> Result<()> {
         for i in 0..self.tryte_len() {
-            self.trytes[i] = Tryte::from_bytes(reader)?;
+            let tryte = Tryte::from_bytes(reader)?;
+            self.set_tryte(i, tryte);
         }
 
         Ok(())
     }
 
-    pub fn write_bytes<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
-        for tryte in self.trytes.iter() {
+    fn write_bytes<W: WriteBytesExt>(&self, mut writer: &mut W) -> Result<()> {
+        for i in 0..self.tryte_len() {
+            let tryte = self.get_tryte(i);
             tryte.write_bytes(writer)?;
         }
 
         Ok(())
     }
 
-    pub fn read_int(&mut self, n: i64) -> Result<()> {
+    fn into_i64(&self) -> i64 {
+        let mut n = 0i64;
+
+        for i in (0..self.trit_len()).rev() {
+            let trit = self.get_trit(i);
+            let t: i16 = trit.into();
+            n = n * 3 + t as i64;
+        }
+
+        n
+    }
+
+    fn read_i64(&mut self, n: i64) -> Result<()> {
         if n < self.min_value() || self.max_value() < n {
             return Err(Error::IntegerOutOfBounds(
                 self.min_value(),
@@ -106,7 +98,7 @@ impl<'a> Ternary<'a> {
         Ok(())
     }
 
-    pub fn read_hyte_str(&mut self, s: &str) -> Result<()> {
+    fn read_hytes(&mut self, s: &str) -> Result<()> {
         let len = self.tryte_len() * 2;
         if s.len() != len {
             return Err(Error::InvalidDataLength(len, s.len()));
@@ -117,13 +109,22 @@ impl<'a> Ternary<'a> {
             let (substr, _s) = s.split_at(2);
             s = _s;
             let tryte = Tryte::from_hyte_str(substr)?;
-            self.trytes[i] = tryte;
+            self.set_tryte(i, tryte);
         }
 
         Ok(())
     }
 
-    pub fn read_trit_str(&mut self, s: &str) -> Result<()> {
+    fn write_hytes<W: fmt::Write>(&self, mut writer: W) -> Result<()> {
+        for i in (0..self.tryte_len()).rev() {
+            let tryte = self.get_tryte(i);
+            tryte.write_hytes(&mut writer)?;
+        }
+
+        Ok(())
+    }
+
+    fn read_trits(&mut self, s: &str) -> Result<()> {
         if s.len() != self.trit_len() {
             return Err(Error::InvalidDataLength(self.trit_len(), s.len()));
         }
@@ -136,47 +137,37 @@ impl<'a> Ternary<'a> {
         Ok(())
     }
 
-    fn read_trits(&mut self, trits: &[Trit]) -> Result<()> {
-        if trits.len() != self.trit_len() {
-            return Err(Error::InvalidDataLength(self.trit_len(), trits.len()));
-        }
-
-        for (i, &trit) in trits.iter().enumerate() {
-            self.set_trit(i, trit);
+    fn write_trits<W: fmt::Write>(&self, mut writer: W) -> Result<()> {
+        for i in (0..self.trit_len()).rev() {
+            let trit = self.get_trit(i);
+            let c: char = trit.into();
+            write!(writer, "{}", c)?;
         }
 
         Ok(())
     }
 
-    pub fn display_hytes(&self) -> DisplayHytes {
-        DisplayHytes(self)
+    fn negate(&mut self) {
+        mutate_trytes(self, Tryte::neg);
     }
 
-    pub fn display_trits(&self) -> DisplayTrits {
-        DisplayTrits(self)
+    fn and(&mut self, rhs: &Self) {
+        mutate2_trits(self, rhs, Trit::bitand);
     }
 
-    pub fn negate(&mut self) {
-        self.mutate_trytes(Tryte::neg);
+    fn or(&mut self, rhs: &Self) {
+        mutate2_trits(self, rhs, Trit::bitor);
     }
 
-    pub fn and(&mut self, rhs: &Ternary) {
-        self.mutate2_trits(rhs, Trit::bitand);
+    fn tcmp(&mut self, rhs: &Self) {
+        mutate2_trits(self, rhs, Trit::tcmp)
     }
 
-    pub fn or(&mut self, rhs: &Ternary) {
-        self.mutate2_trits(rhs, Trit::bitor);
+    fn tmul(&mut self, rhs: &Self) {
+        mutate2_trits(self, rhs, Trit::mul)
     }
 
-    pub fn tcmp(&mut self, rhs: &Ternary) {
-        self.mutate2_trits(rhs, Trit::tcmp)
-    }
-
-    pub fn tmul(&mut self, rhs: &Ternary) {
-        self.mutate2_trits(rhs, Trit::mul)
-    }
-
-    pub fn add(&mut self, rhs: &Ternary, carry: Trit) -> Trit {
+    fn add(&mut self, rhs: &Self, carry: Trit) -> Trit {
         let mut carry = carry;
 
         for i in 0..self.trit_len() {
@@ -190,30 +181,16 @@ impl<'a> Ternary<'a> {
         carry
     }
 
-    fn add_mul(&mut self, rhs: &Ternary, sign: Trit, offset: usize) -> Trit {
-        let mut carry = trit::ZERO;
-
-        for i in 0..rhs.trit_len() {
-            let a = self.get_trit(i + offset);
-            let b = rhs.get_trit(i);
-            let (c, _carry) = a.add_with_carry(b * sign, carry);
-            carry = _carry;
-            self.set_trit(i + offset, c);
-        }
-
-        carry
-    }
-
-    pub fn multiply(&mut self, lhs: &Ternary, rhs: &Ternary) {
+    fn multiply(&mut self, lhs: &Self, rhs: &Self) {
         let len = rhs.trit_len();
         for i in 0..len {
             let sign = rhs.get_trit(i);
-            let carry = self.add_mul(lhs, sign, i);
+            let carry = add_mul(self, lhs, sign, i);
             self.set_trit(i + len, carry);
         }
     }
 
-    pub fn compare(&self, rhs: &Ternary) -> Trit {
+    fn compare(&self, rhs: &Self) -> Trit {
         let mut cmp_trit = trit::ZERO;
 
         for i in (0..self.trit_len()).rev() {
@@ -228,37 +205,109 @@ impl<'a> Ternary<'a> {
 
         cmp_trit
     }
+}
 
-    fn mutate_trits<F: Fn(Trit) -> Trit>(&mut self, f: F) {
-        for i in 0..self.trit_len() {
-            let trit = self.get_trit(i);
-            self.set_trit(i, f(trit));
-        }
+fn read_trits<T: Ternary + ?Sized>(dest: &mut T, trits: &[Trit]) -> Result<()> {
+    if trits.len() != dest.trit_len() {
+        return Err(Error::InvalidDataLength(dest.trit_len(), trits.len()));
     }
 
-    fn mutate_trytes<F: Fn(Tryte) -> Tryte>(&mut self, f: F) {
-        for i in 0..self.tryte_len() {
-            let tryte = self.trytes[i];
-            self.trytes[i] = f(tryte);
-        }
+    for (i, &trit) in trits.iter().enumerate() {
+        dest.set_trit(i, trit);
     }
 
-    fn mutate2_trits<F: Fn(Trit, Trit) -> Trit>(&mut self, rhs: &Ternary, f: F) {
-        for i in 0..rhs.trit_len() {
-            let a = self.get_trit(i);
-            let b = rhs.get_trit(i);
-            let c = f(a, b);
-            self.set_trit(i, c);
-        }
+    Ok(())
+}
+
+fn add_mul<T: Ternary + ?Sized>(lhs: &mut T, rhs: &T, sign: Trit, offset: usize) -> Trit {
+    let mut carry = trit::ZERO;
+
+    for i in 0..rhs.trit_len() {
+        let a = lhs.get_trit(i + offset);
+        let b = rhs.get_trit(i);
+        let (c, _carry) = a.add_with_carry(b * sign, carry);
+        carry = _carry;
+        lhs.set_trit(i + offset, c);
     }
 
-    fn mutate2_trytes<F: Fn(Tryte, Tryte) -> Tryte>(&mut self, rhs: &Ternary, f: F) {
-        for i in 0..rhs.tryte_len() {
-            let a = self.trytes[i];
-            let b = rhs.trytes[i];
-            let c = f(a, b);
-            self.trytes[i] = c;
-        }
+    carry
+}
+
+fn mutate_trits<T, F>(lhs: &mut T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Trit) -> Trit,
+{
+    for i in 0..lhs.trit_len() {
+        let trit = lhs.get_trit(i);
+        lhs.set_trit(i, f(trit));
+    }
+}
+
+fn mutate_trytes<T, F>(lhs: &mut T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Tryte) -> Tryte,
+{
+    for i in 0..lhs.tryte_len() {
+        let tryte = lhs.get_tryte(i);
+        lhs.set_tryte(i, f(tryte));
+    }
+}
+
+fn mutate2_trits<T, F>(lhs: &mut T, rhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Trit, Trit) -> Trit,
+{
+    for i in 0..rhs.trit_len() {
+        let a = lhs.get_trit(i);
+        let b = rhs.get_trit(i);
+        let c = f(a, b);
+        lhs.set_trit(i, c);
+    }
+}
+
+fn mutate2_trytes<T, F>(lhs: &mut T, rhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Tryte, Tryte) -> Tryte,
+{
+    for i in 0..rhs.tryte_len() {
+        let a = lhs.get_tryte(i);
+        let b = rhs.get_tryte(i);
+        let c = f(a, b);
+        lhs.set_tryte(i, c);
+    }
+}
+
+impl Ternary for [Tryte] {
+    fn trit_len(&self) -> usize {
+        self.tryte_len() * tryte::TRIT_LEN
+    }
+
+    fn tryte_len(&self) -> usize {
+        self.len()
+    }
+
+    fn get_trit(&self, i: usize) -> Trit {
+        let (tryte_index, trit_index) = indices(i);
+        let tryte = self[tryte_index];
+        tryte.get_trit(trit_index)
+    }
+
+    fn set_trit(&mut self, i: usize, trit: Trit) {
+        let (tryte_index, trit_index) = indices(i);
+        let tryte = self[tryte_index];
+        self[tryte_index] = tryte.set_trit(trit_index, trit);
+    }
+
+    fn get_tryte(&self, i: usize) -> Tryte {
+        self[i]
+    }
+
+    fn set_tryte(&mut self, i: usize, tryte: Tryte) {
+        self[i] = tryte;
     }
 }
 
@@ -266,50 +315,4 @@ fn indices(i: usize) -> (usize, usize) {
     let tryte_index = i / tryte::TRIT_LEN;
     let trit_index = i % tryte::TRIT_LEN;
     (tryte_index, trit_index)
-}
-
-impl<'a> Into<i64> for Ternary<'a> {
-    fn into(self) -> i64 {
-        let mut n = 0i64;
-
-        for i in (0..self.trit_len()).rev() {
-            let trit = self.get_trit(i);
-            let t: i16 = trit.into();
-            n = n * 3 + t as i64;
-        }
-
-        n
-    }
-}
-
-pub struct DisplayHytes<'a>(&'a Ternary<'a>);
-
-impl<'a> fmt::Display for DisplayHytes<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0h")?;
-
-        let ternary = self.0;
-        for tryte in ternary.trytes.iter().rev() {
-            tryte.fmt_hytes(f)?;
-        }
-
-        Ok(())
-    }
-}
-
-pub struct DisplayTrits<'a>(&'a Ternary<'a>);
-
-impl<'a> fmt::Display for DisplayTrits<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0t")?;
-
-        let ternary = self.0;
-        for i in (0..ternary.trit_len()).rev() {
-            let trit = ternary.get_trit(i);
-            let c: char = trit.into();
-            write!(f, "{}", c)?;
-        }
-
-        Ok(())
-    }
 }

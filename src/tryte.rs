@@ -110,11 +110,11 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn fmt_hytes(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    pub fn write_hytes<W: fmt::Write>(&self, mut writer: W) -> fmt::Result {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
-        write!(f, "{}{}", high_char, low_char)
+        write!(writer, "{}{}", high_char, low_char)
     }
 }
 
@@ -154,6 +154,6 @@ impl fmt::Debug for Tryte {
 
 impl fmt::Display for Tryte {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.fmt_hytes(f)
+        self.write_hytes(f)
     }
 }
