@@ -91,7 +91,7 @@ fn trit_add() {
     assert_eq!((POS, ZERO), POS.add_with_carry(NEG, POS));
     assert_eq!((NEG, ZERO), POS.add_with_carry(NEG, NEG));
     assert_eq!((NEG, ZERO), NEG.add_with_carry(ZERO, ZERO));
-    assert_eq!((POS, ZERO), NEG.add_with_carry(ZERO, POS));
+    assert_eq!((ZERO, ZERO), NEG.add_with_carry(ZERO, POS));
     assert_eq!((POS, NEG), NEG.add_with_carry(ZERO, NEG));
     assert_eq!((ZERO, ZERO), NEG.add_with_carry(POS, ZERO));
     assert_eq!((POS, ZERO), NEG.add_with_carry(POS, POS));
