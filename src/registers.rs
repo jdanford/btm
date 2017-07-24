@@ -1,10 +1,35 @@
-use std::convert::TryFrom;
+use std::ops::{Index, IndexMut};
 
-use tables::TRIT4_TO_U8;
+use constants::*;
+use tables::TRIT4_TO_USIZE;
 use error::{Error, Result};
+use tryte::Tryte;
+
+
+pub trait Register: Sized {
+    const COUNT: usize;
+
+    fn from_trit4(trit4: u8) -> Result<Self> {
+        let i = TRIT4_TO_USIZE[trit4 as usize];
+        if i >= Self::COUNT {
+            return Err(Error::InvalidRegister(i));
+        }
+
+        Ok(Self::from_index(i))
+    }
+
+    fn into_indices(&self) -> (usize, usize) {
+        let i = self.into_index();
+        let j = i + WORD_TRYTE_LEN;
+        (i, j)
+    }
+
+    fn from_index(usize) -> Self;
+    fn into_index(&self) -> usize;
+}
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct StandardRegister(pub u8);
+pub struct StandardRegister(usize);
 
 pub const ZERO: StandardRegister = StandardRegister(0);
 pub const LO: StandardRegister = StandardRegister(1);
@@ -31,36 +56,62 @@ pub const T3: StandardRegister = StandardRegister(21);
 pub const T4: StandardRegister = StandardRegister(22);
 pub const T5: StandardRegister = StandardRegister(23);
 
-impl TryFrom<u8> for StandardRegister {
-    type Error = Error;
+impl Register for StandardRegister {
+    const COUNT: usize = 24;
 
-    fn try_from(trit4: u8) -> Result<StandardRegister> {
-        let i = TRIT4_TO_U8[trit4 as usize];
-        if i > T5.0 {
-            return Err(Error::InvalidIndex(i as usize));
-        }
+    fn from_index(i: usize) -> Self {
+        StandardRegister(i)
+    }
 
-        Ok(StandardRegister(i))
+    fn into_index(&self) -> usize {
+        self.0 as usize
     }
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct SystemRegister(pub u8);
+pub struct SystemRegister(usize);
 
 pub const EHA: SystemRegister = SystemRegister(0);
 pub const ERA: SystemRegister = SystemRegister(1);
 pub const EC: SystemRegister = SystemRegister(2);
 pub const ED: SystemRegister = SystemRegister(3);
 
-impl TryFrom<u8> for SystemRegister {
-    type Error = Error;
+impl Register for SystemRegister {
+    const COUNT: usize = 4;
 
-    fn try_from(trit4: u8) -> Result<SystemRegister> {
-        let i = TRIT4_TO_U8[trit4 as usize];
-        if i > ED.0 {
-            return Err(Error::InvalidIndex(i as usize));
-        }
+    fn from_index(i: usize) -> Self {
+        SystemRegister(i)
+    }
 
-        Ok(SystemRegister(i))
+    fn into_index(&self) -> usize {
+        self.0 as usize + StandardRegister::COUNT
+    }
+}
+
+const TOTAL_COUNT: usize = StandardRegister::COUNT + SystemRegister::COUNT;
+
+pub struct RegisterFile {
+    registers: [Tryte; WORD_TRYTE_LEN * TOTAL_COUNT],
+}
+
+impl<R> Index<R> for RegisterFile
+where
+    R: Register,
+{
+    type Output = [Tryte];
+
+    fn index(&self, register: R) -> &Self::Output {
+        let (i, j) = register.into_indices();
+        &self.registers[i..j]
+    }
+}
+
+impl<R> IndexMut<R> for RegisterFile
+where
+    R: Register,
+{
+    fn index_mut(&mut self, register: R) -> &mut Self::Output {
+        let (i, j) = register.into_indices();
+        &mut self.registers[i..j]
     }
 }

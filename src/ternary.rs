@@ -13,10 +13,10 @@ use tryte::Tryte;
 pub trait Ternary {
     fn trit_len(&self) -> usize;
     fn tryte_len(&self) -> usize;
-    fn get_trit(&self, i: usize) -> Trit;
-    fn set_trit(&mut self, i: usize, trit: Trit);
-    fn get_tryte(&self, i: usize) -> Tryte;
-    fn set_tryte(&mut self, i: usize, tryte: Tryte);
+    fn get_trit(&self, usize) -> Trit;
+    fn set_trit(&mut self, usize, trit: Trit);
+    fn get_tryte(&self, usize) -> Tryte;
+    fn set_tryte(&mut self, usize, tryte: Tryte);
 
     fn range(&self) -> i64 {
         let base = 3i64;

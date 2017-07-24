@@ -4,14 +4,15 @@ use std::result;
 
 #[derive(Debug)]
 pub enum Error {
+    FormatError(fmt::Error),
     IntegerOutOfBounds(i64, i64, i64),
     InvalidBitPattern(u64),
     InvalidCharacter(char),
     InvalidDataLength(usize, usize),
-    InvalidIndex(usize),
+    InvalidOpcode(usize),
+    InvalidRegister(usize),
     InvalidString(String),
     IoError(io::Error),
-    FormatError(fmt::Error),
 }
 
 impl PartialEq for Error {
@@ -25,6 +26,8 @@ impl PartialEq for Error {
             (&Error::InvalidDataLength(e1, a1), &Error::InvalidDataLength(e2, a2)) => {
                 e1 == a1 && e2 == a2
             }
+            (&Error::InvalidOpcode(n1), &Error::InvalidOpcode(n2)) => n1 == n2,
+            (&Error::InvalidRegister(n1), &Error::InvalidRegister(n2)) => n1 == n2,
             (&Error::InvalidString(ref s1), &Error::InvalidString(ref s2)) => s1 == s2,
             _ => false,
         }
@@ -35,14 +38,14 @@ impl Eq for Error {}
 
 pub type Result<T> = result::Result<T, Error>;
 
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Error {
-        Error::IoError(error)
-    }
-}
-
 impl From<fmt::Error> for Error {
     fn from(error: fmt::Error) -> Error {
         Error::FormatError(error)
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Error {
+        Error::IoError(error)
     }
 }

@@ -1,10 +1,8 @@
-use std::convert::TryFrom;
-
-use tables::TRIT4_TO_U8;
+use tables::TRIT4_TO_USIZE;
 use error::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Opcode(pub u8);
+pub struct Opcode(usize);
 
 pub const AND: Opcode = Opcode(0);
 pub const OR: Opcode = Opcode(1);
@@ -43,13 +41,11 @@ pub const CALLR: Opcode = Opcode(33);
 pub const SYSCALL: Opcode = Opcode(34);
 pub const BREAK: Opcode = Opcode(35);
 
-impl TryFrom<u8> for Opcode {
-    type Error = Error;
-
-    fn try_from(trit4: u8) -> Result<Opcode> {
-        let i = TRIT4_TO_U8[trit4 as usize];
+impl Opcode {
+    pub fn from_trit4(trit4: u8) -> Result<Opcode> {
+        let i = TRIT4_TO_USIZE[trit4 as usize];
         if i > BREAK.0 {
-            return Err(Error::InvalidIndex(i as usize));
+            return Err(Error::InvalidOpcode(i));
         }
 
         Ok(Opcode(i))

@@ -1,5 +1,5 @@
-use std::u8;
 use std::u16;
+use std::usize;
 
 lazy_static! {
     pub static ref TRIT2_TO_AND: [u16; 16] = {
@@ -100,8 +100,8 @@ lazy_static! {
         table
     };
 
-    pub static ref TRIT4_TO_U8: [u8; 256] = {
-        let mut table = [u8::MAX; 256];
+    pub static ref TRIT4_TO_USIZE: [usize; 256] = {
+        let mut table = [usize::MAX; 256];
 
         table[0b00_00_00_00] = 0;
         table[0b00_00_00_01] = 1;
@@ -144,7 +144,7 @@ lazy_static! {
     };
 }
 
-pub static U8_TO_TRIT4: [u8; 36] = [
+pub static USIZE_TO_TRIT4: [usize; 36] = [
     0b00_00_00_00,
     0b00_00_00_01,
     0b00_00_01_11,

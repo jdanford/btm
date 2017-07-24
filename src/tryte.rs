@@ -4,17 +4,17 @@ use std::ops;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
+use constants::*;
 use error::{Error, Result};
 use trit;
 use trit::Trit;
 use hyte::{char_from_hyte, try_hyte_from_char};
 
-pub const TRIT_LEN: usize = 6;
+pub use constants::TRYTE_TRIT_LEN as TRIT_LEN;
 
 const BITMASK: u16 = 0b11_11_11_11_11_11;
 const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
-const HYTE_BIT_WIDTH: usize = 6;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Tryte(pub u16);
@@ -57,7 +57,7 @@ impl Tryte {
     }
 
     fn from_hytes(low_hyte: u8, high_hyte: u8) -> Tryte {
-        let bits = (high_hyte as u16) << HYTE_BIT_WIDTH | (low_hyte as u16);
+        let bits = (high_hyte as u16) << HYTE_BIT_LEN | (low_hyte as u16);
         Tryte(bits)
     }
 
@@ -70,7 +70,7 @@ impl Tryte {
     }
 
     fn high(self) -> u8 {
-        (self.0 >> HYTE_BIT_WIDTH) as u8 & HYTE_BITMASK
+        (self.0 >> HYTE_BIT_LEN) as u8 & HYTE_BITMASK
     }
 
     fn negation_bits(self) -> u16 {

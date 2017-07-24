@@ -7,6 +7,7 @@ extern crate byteorder;
 extern crate lazy_static;
 extern crate phf;
 
+mod constants;
 mod error;
 mod tables;
 mod trit;
