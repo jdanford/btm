@@ -17,5 +17,6 @@ mod ternary;
 mod registers;
 mod opcodes;
 mod instructions;
+mod vm;
 #[cfg(test)]
 mod tests;
