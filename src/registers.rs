@@ -3,8 +3,8 @@ use std::ops::{Index, IndexMut};
 use constants::*;
 use tables::TRIT4_TO_USIZE;
 use error::{Error, Result};
+use tryte;
 use tryte::Tryte;
-
 
 pub trait Register: Sized {
     const COUNT: usize;
@@ -89,9 +89,18 @@ impl Register for SystemRegister {
 }
 
 const TOTAL_COUNT: usize = StandardRegister::COUNT + SystemRegister::COUNT;
+const TOTAL_TRYTE_LEN: usize = TOTAL_COUNT * WORD_TRYTE_LEN;
 
 pub struct RegisterFile {
-    registers: [Tryte; WORD_TRYTE_LEN * TOTAL_COUNT],
+    registers: [Tryte; TOTAL_TRYTE_LEN],
+}
+
+impl RegisterFile {
+    pub fn new() -> RegisterFile {
+        RegisterFile {
+            registers: [tryte::ZERO; TOTAL_TRYTE_LEN],
+        }
+    }
 }
 
 impl<R> Index<R> for RegisterFile
