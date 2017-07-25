@@ -9,8 +9,9 @@ pub enum Error {
     InvalidBitPattern(u64),
     InvalidCharacter(char),
     InvalidDataLength(usize, usize),
-    InvalidOpcode(usize),
-    InvalidRegister(usize),
+    InvalidInstruction(String),
+    InvalidOpcode(u8),
+    InvalidRegister(u8),
     InvalidString(String),
     IoError(io::Error),
 }
@@ -26,6 +27,7 @@ impl PartialEq for Error {
             (&Error::InvalidDataLength(e1, a1), &Error::InvalidDataLength(e2, a2)) => {
                 e1 == a1 && e2 == a2
             }
+            (&Error::InvalidInstruction(ref s1), &Error::InvalidInstruction(ref s2)) => s1 == s2,
             (&Error::InvalidOpcode(n1), &Error::InvalidOpcode(n2)) => n1 == n2,
             (&Error::InvalidRegister(n1), &Error::InvalidRegister(n2)) => n1 == n2,
             (&Error::InvalidString(ref s1), &Error::InvalidString(ref s2)) => s1 == s2,

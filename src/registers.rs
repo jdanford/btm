@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use constants::*;
-use tables::TRIT4_TO_USIZE;
+use tables::TRIT4_TO_U8;
 use error::{Error, Result};
 use tryte;
 use tryte::Tryte;
@@ -10,12 +10,12 @@ pub trait Register: Sized {
     const COUNT: usize;
 
     fn from_trit4(trit4: u8) -> Result<Self> {
-        let i = TRIT4_TO_USIZE[trit4 as usize];
-        if i >= Self::COUNT {
+        let i = TRIT4_TO_U8[trit4 as usize];
+        if i as usize >= Self::COUNT {
             return Err(Error::InvalidRegister(i));
         }
 
-        Ok(Self::from_index(i))
+        Ok(Self::from_index(i as usize))
     }
 
     fn into_indices(&self) -> (usize, usize) {
