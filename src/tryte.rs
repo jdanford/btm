@@ -61,16 +61,20 @@ impl Tryte {
         Tryte(bits)
     }
 
-    fn hytes(self) -> (u8, u8) {
-        (self.low(), self.high())
-    }
-
-    fn low(self) -> u8 {
+    fn low_hyte(self) -> u8 {
         self.0 as u8 & HYTE_BITMASK
     }
 
-    fn high(self) -> u8 {
+    fn high_hyte(self) -> u8 {
         (self.0 >> HYTE_BIT_LEN) as u8 & HYTE_BITMASK
+    }
+
+    fn hytes(self) -> (u8, u8) {
+        (self.low_hyte(), self.high_hyte())
+    }
+
+    pub fn low_trit4(self) -> u8 {
+        self.0 as u8
     }
 
     fn negation_bits(self) -> u16 {

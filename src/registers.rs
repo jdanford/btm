@@ -20,7 +20,7 @@ pub trait Register: Sized {
 
     fn into_indices(&self) -> (usize, usize) {
         let i = self.into_index();
-        let j = i + WORD_TRYTE_LEN;
+        let j = i + WORD_LEN;
         (i, j)
     }
 
@@ -89,22 +89,19 @@ impl Register for SystemRegister {
 }
 
 const TOTAL_COUNT: usize = StandardRegister::COUNT + SystemRegister::COUNT;
-const TOTAL_TRYTE_LEN: usize = TOTAL_COUNT * WORD_TRYTE_LEN;
+const TOTAL_LEN: usize = TOTAL_COUNT * WORD_LEN;
 
 pub struct RegisterFile {
-    registers: [Tryte; TOTAL_TRYTE_LEN],
+    registers: [Tryte; TOTAL_LEN],
 }
 
 impl RegisterFile {
     pub fn new() -> RegisterFile {
-        RegisterFile { registers: [tryte::ZERO; TOTAL_TRYTE_LEN] }
+        RegisterFile { registers: [tryte::ZERO; TOTAL_LEN] }
     }
 }
 
-impl<R> Index<R> for RegisterFile
-where
-    R: Register,
-{
+impl<R: Register> Index<R> for RegisterFile {
     type Output = [Tryte];
 
     fn index(&self, register: R) -> &Self::Output {
@@ -113,10 +110,7 @@ where
     }
 }
 
-impl<R> IndexMut<R> for RegisterFile
-where
-    R: Register,
-{
+impl<R: Register> IndexMut<R> for RegisterFile {
     fn index_mut(&mut self, register: R) -> &mut Self::Output {
         let (i, j) = register.into_indices();
         &mut self.registers[i..j]
