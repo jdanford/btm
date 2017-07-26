@@ -115,10 +115,10 @@ pub trait Ternary {
         Ok(())
     }
 
-    fn write_hytes<W: fmt::Write>(&self, mut writer: W) -> Result<()> {
+    fn write_hytes<W: fmt::Write>(&self, writer: &mut W) -> Result<()> {
         for i in (0..self.tryte_len()).rev() {
             let tryte = self.get_tryte(i);
-            tryte.write_hytes(&mut writer)?;
+            tryte.write_hytes(writer)?;
         }
 
         Ok(())
@@ -137,7 +137,7 @@ pub trait Ternary {
         Ok(())
     }
 
-    fn write_trits<W: fmt::Write>(&self, mut writer: W) -> Result<()> {
+    fn write_trits<W: fmt::Write>(&self, writer: &mut W) -> Result<()> {
         for i in (0..self.trit_len()).rev() {
             let trit = self.get_trit(i);
             let c: char = trit.into();

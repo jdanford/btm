@@ -12,7 +12,7 @@ use hyte::{char_from_hyte, try_hyte_from_char};
 
 pub use constants::TRYTE_TRIT_LEN as TRIT_LEN;
 
-const BITMASK: u16 = 0b11_11_11_11_11_11;
+pub const BITMASK: u16 = 0b11_11_11_11_11_11;
 const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 
@@ -114,7 +114,7 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn write_hytes<W: fmt::Write>(&self, mut writer: W) -> fmt::Result {
+    pub fn write_hytes<W: fmt::Write>(&self, writer: &mut W) -> fmt::Result {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
