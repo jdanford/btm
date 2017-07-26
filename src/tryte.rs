@@ -13,7 +13,7 @@ use hyte::{char_from_hyte, try_hyte_from_char};
 pub use constants::TRYTE_TRIT_LEN as TRIT_LEN;
 
 pub const BITMASK: u16 = 0b11_11_11_11_11_11;
-const HYTE_BITMASK: u8 = 0b11_11_11;
+pub const HYTE_BITMASK: u8 = 0b11_11_11;
 const SIGN_BITMASK: u16 = 0b10_10_10_10_10_10;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]

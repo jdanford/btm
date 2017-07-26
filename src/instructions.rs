@@ -1,6 +1,5 @@
 use error::Result;
 use tryte::Tryte;
-use ternary::Ternary;
 use opcodes;
 use opcodes::Opcode;
 use operands;
@@ -48,7 +47,7 @@ pub enum Instruction {
 
 impl Instruction {
     pub fn from_word(word: &[Tryte]) -> Result<Instruction> {
-        let opcode_trit4 = word.get_tryte(0).low_trit4();
+        let opcode_trit4 = word[0].low_trit4();
         let opcode = Opcode::from_trit4(opcode_trit4)?;
         match opcode {
             opcodes::AND => operands::RRR::from_word(word).map(Instruction::And),

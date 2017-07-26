@@ -5,6 +5,7 @@ use error::Result;
 use trit;
 use trit::Trit;
 use tryte::*;
+
 use tests::constants::*;
 
 #[test]

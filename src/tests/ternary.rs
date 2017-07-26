@@ -4,6 +4,7 @@ use error::Result;
 use trit;
 use tryte::Tryte;
 use ternary::*;
+
 use tests::constants::*;
 
 fn clone_slice<T: Clone>(slice: &[T]) -> Vec<T> {
