@@ -28,6 +28,15 @@ pub const POS: Trit = Trit(BIN_POS);
 pub const NEG: Trit = Trit(BIN_NEG);
 
 impl Trit {
+    pub fn from_trit4(trit4: u8) -> Result<Self> {
+        let trit_bits = trit4 as u16 & BITMASK;
+        if trit_bits == BIN_INVALID {
+            return Err(Error::InvalidBitPattern(trit_bits as u64));
+        }
+
+        Ok(Trit(trit_bits))
+    }
+
     fn negation_bits(self) -> u16 {
         self.0 << 1 & BITMASK
     }
