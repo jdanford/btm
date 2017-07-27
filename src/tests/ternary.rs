@@ -1,10 +1,10 @@
 use std::io::Cursor;
 
-use error::Result;
-use trit;
-use tryte::Tryte;
+use ternary::Result;
+use ternary::trit;
 use ternary;
-use ternary::*;
+use ternary::Ternary;
+use ternary::Tryte;
 
 use tests::constants::*;
 

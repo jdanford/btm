@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use trit::*;
+use ternary::trit::*;
 
 #[test]
 fn trit_into_i16() {

@@ -1,10 +1,10 @@
 use std::convert::TryInto;
 use std::io::Cursor;
 
-use error::Result;
-use trit;
-use trit::Trit;
-use tryte::*;
+use ternary::Result;
+use ternary::trit;
+use ternary::Trit;
+use ternary::tryte::*;
 
 use tests::constants::*;
 

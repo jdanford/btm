@@ -1,7 +1,7 @@
-use constants::*;
 use error::Result;
-use trit;
-use tryte;
+use ternary::constants::*;
+use ternary::trit;
+use ternary::tryte;
 use ternary::Ternary;
 use registers;
 use operands;

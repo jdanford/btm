@@ -1,14 +1,19 @@
+pub mod error;
+pub mod constants;
+pub mod tables;
+pub mod trit;
+mod hyte;
+pub mod tryte;
+
 use std::convert::TryFrom;
 use std::fmt;
 use std::ops::{BitAnd, BitOr, Mul, Neg};
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
-use error::{Error, Result};
-use trit;
-use trit::Trit;
-use tryte;
-use tryte::Tryte;
+pub use self::error::{Error, Result};
+pub use self::trit::Trit;
+pub use self::tryte::Tryte;
 
 pub trait Ternary {
     fn trit_len(&self) -> usize;

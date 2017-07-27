@@ -1,7 +1,7 @@
-use constants::*;
 use error::Result;
-use tryte;
-use tryte::Tryte;
+use ternary::constants::*;
+use ternary::tryte;
+use ternary::Tryte;
 use registers::RegisterFile;
 use operands;
 use instructions::Instruction;
@@ -89,7 +89,6 @@ impl<'a> VM<'a> {
         let word = &self.memory[i..j];
         Instruction::from_word(word)
     }
-
 
     fn op_and(&mut self, operands: operands::RRR) -> Result<()> {
         unimplemented!()

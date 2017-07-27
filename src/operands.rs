@@ -1,9 +1,9 @@
-use constants::*;
 use error::{Error, Result};
-use trit;
-use trit::Trit;
-use tryte;
-use tryte::Tryte;
+use ternary::constants::*;
+use ternary::trit;
+use ternary::trit::Trit;
+use ternary::tryte;
+use ternary::tryte::Tryte;
 use ternary::Ternary;
 use registers::*;
 

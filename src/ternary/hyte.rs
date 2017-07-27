@@ -1,7 +1,7 @@
 use phf;
 
-use trit::CHAR_INVALID;
-use error::{Error, Result};
+use super::trit::CHAR_INVALID;
+use super::error::{Error, Result};
 
 static CHAR_TO_HYTE: phf::Map<char, u8> =
     phf_map! {

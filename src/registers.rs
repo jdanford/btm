@@ -1,10 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use constants::*;
-use tables::TRIT4_TO_U8;
 use error::{Error, Result};
-use tryte;
-use tryte::Tryte;
+use ternary::constants::*;
+use ternary::tables::TRIT4_TO_U8;
+use ternary::tryte;
+use ternary::Tryte;
 
 pub trait Register: Sized {
     const COUNT: usize;

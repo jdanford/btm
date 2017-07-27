@@ -5,8 +5,8 @@ use std::ops;
 
 use phf;
 
-use tables::*;
-use error::{Error, Result};
+use super::tables::*;
+use super::error::{Error, Result};
 
 pub const BITMASK: u16 = 0b11;
 
