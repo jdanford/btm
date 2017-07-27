@@ -1,7 +1,10 @@
 use error::Result;
+use ternary;
 use ternary::constants::*;
 use ternary::tryte;
 use ternary::Tryte;
+use ternary::Ternary;
+use registers;
 use registers::RegisterFile;
 use operands;
 use instructions::Instruction;
@@ -41,40 +44,40 @@ impl<'a> VM<'a> {
     fn step(&mut self) -> Result<()> {
         let instruction = self.next_instruction()?;
         match instruction {
-            Instruction::And(operands) => self.op_and(operands),
-            Instruction::Or(operands) => self.op_or(operands),
-            Instruction::Tmul(operands) => self.op_tmul(operands),
-            Instruction::Tcmp(operands) => self.op_tcmp(operands),
-            Instruction::Cmp(operands) => self.op_cmp(operands),
-            Instruction::Shf(operands) => self.op_shf(operands),
-            Instruction::Add(operands) => self.op_add(operands),
-            Instruction::Mul(operands) => self.op_mul(operands),
-            Instruction::Div(operands) => self.op_div(operands),
-            Instruction::Andi(operands) => self.op_andi(operands),
-            Instruction::Ori(operands) => self.op_ori(operands),
-            Instruction::Tmuli(operands) => self.op_tmuli(operands),
-            Instruction::Tcmpi(operands) => self.op_tcmpi(operands),
-            Instruction::Shfi(operands) => self.op_shfi(operands),
-            Instruction::Addi(operands) => self.op_addi(operands),
-            Instruction::Lui(operands) => self.op_lui(operands),
-            Instruction::Lsr(operands) => self.op_lsr(operands),
-            Instruction::Ssr(operands) => self.op_ssr(operands),
-            Instruction::Lt(operands) => self.op_lt(operands),
-            Instruction::Lh(operands) => self.op_lh(operands),
-            Instruction::Lw(operands) => self.op_lw(operands),
-            Instruction::St(operands) => self.op_st(operands),
-            Instruction::Sh(operands) => self.op_sh(operands),
-            Instruction::Sw(operands) => self.op_sw(operands),
-            Instruction::BT(operands) => self.op_bt(operands),
-            Instruction::B0(operands) => self.op_b0(operands),
-            Instruction::B1(operands) => self.op_b1(operands),
-            Instruction::BT0(operands) => self.op_bt0(operands),
-            Instruction::BT1(operands) => self.op_bt1(operands),
-            Instruction::B01(operands) => self.op_b01(operands),
-            Instruction::Jmp(operands) => self.op_jmp(operands),
-            Instruction::Call(operands) => self.op_call(operands),
-            Instruction::Jmpr(operands) => self.op_jmpr(operands),
-            Instruction::Callr(operands) => self.op_callr(operands),
+            Instruction::And(ref operands) => self.op_and(operands),
+            Instruction::Or(ref operands) => self.op_or(operands),
+            Instruction::Tmul(ref operands) => self.op_tmul(operands),
+            Instruction::Tcmp(ref operands) => self.op_tcmp(operands),
+            Instruction::Cmp(ref operands) => self.op_cmp(operands),
+            Instruction::Shf(ref operands) => self.op_shf(operands),
+            Instruction::Add(ref operands) => self.op_add(operands),
+            Instruction::Mul(ref operands) => self.op_mul(operands),
+            Instruction::Div(ref operands) => self.op_div(operands),
+            Instruction::Andi(ref operands) => self.op_andi(operands),
+            Instruction::Ori(ref operands) => self.op_ori(operands),
+            Instruction::Tmuli(ref operands) => self.op_tmuli(operands),
+            Instruction::Tcmpi(ref operands) => self.op_tcmpi(operands),
+            Instruction::Shfi(ref operands) => self.op_shfi(operands),
+            Instruction::Addi(ref operands) => self.op_addi(operands),
+            Instruction::Lui(ref operands) => self.op_lui(operands),
+            Instruction::Lsr(ref operands) => self.op_lsr(operands),
+            Instruction::Ssr(ref operands) => self.op_ssr(operands),
+            Instruction::Lt(ref operands) => self.op_lt(operands),
+            Instruction::Lh(ref operands) => self.op_lh(operands),
+            Instruction::Lw(ref operands) => self.op_lw(operands),
+            Instruction::St(ref operands) => self.op_st(operands),
+            Instruction::Sh(ref operands) => self.op_sh(operands),
+            Instruction::Sw(ref operands) => self.op_sw(operands),
+            Instruction::BT(ref operands) => self.op_bt(operands),
+            Instruction::B0(ref operands) => self.op_b0(operands),
+            Instruction::B1(ref operands) => self.op_b1(operands),
+            Instruction::BT0(ref operands) => self.op_bt0(operands),
+            Instruction::BT1(ref operands) => self.op_bt1(operands),
+            Instruction::B01(ref operands) => self.op_b01(operands),
+            Instruction::Jmp(ref operands) => self.op_jmp(operands),
+            Instruction::Call(ref operands) => self.op_call(operands),
+            Instruction::Jmpr(ref operands) => self.op_jmpr(operands),
+            Instruction::Callr(ref operands) => self.op_callr(operands),
             Instruction::Syscall => self.op_syscall(),
             Instruction::Break => self.op_break(),
             _ => unreachable!(),
@@ -90,139 +93,173 @@ impl<'a> VM<'a> {
         Instruction::from_word(word)
     }
 
-    fn op_and(&mut self, operands: operands::RRR) -> Result<()> {
+    fn do_simple_rrr<F>(&mut self, operands: &operands::RRR, f: F) -> Result<()>
+    where
+        F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
+    {
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+
+        {
+            let lhs = &self.registers[operands.lhs];
+            let rhs = &self.registers[operands.rhs];
+            f(tmp_dest, lhs, rhs);
+        }
+
+        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.registers[registers::ZERO].clear();
+        Ok(())
+    }
+
+    fn do_simple_rri<F>(&mut self, operands: &operands::RRI, f: F) -> Result<()>
+    where
+        F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
+    {
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+
+        {
+            let lhs = &self.registers[operands.src];
+            let rhs = &operands.immediate;
+            f(tmp_dest, lhs, rhs);
+        }
+
+        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.registers[registers::ZERO].clear();
+        Ok(())
+    }
+
+    fn op_and(&mut self, operands: &operands::RRR) -> Result<()> {
+        self.do_simple_rrr(operands, ternary::and)
+    }
+
+    fn op_or(&mut self, operands: &operands::RRR) -> Result<()> {
+        self.do_simple_rrr(operands, ternary::or)
+    }
+
+    fn op_tmul(&mut self, operands: &operands::RRR) -> Result<()> {
+        self.do_simple_rrr(operands, ternary::tmul)
+    }
+
+    fn op_tcmp(&mut self, operands: &operands::RRR) -> Result<()> {
+        self.do_simple_rrr(operands, ternary::tcmp)
+    }
+
+    fn op_cmp(&mut self, operands: &operands::RRR) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_or(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_shf(&mut self, operands: &operands::RRR) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_tmul(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_add(&mut self, operands: &operands::RRR) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_tcmp(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_mul(&mut self, operands: &operands::RR) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_cmp(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_div(&mut self, operands: &operands::RR) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_shf(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_andi(&mut self, operands: &operands::RRI) -> Result<()> {
+        self.do_simple_rri(operands, ternary::and)
+    }
+
+    fn op_ori(&mut self, operands: &operands::RRI) -> Result<()> {
+        self.do_simple_rri(operands, ternary::or)
+    }
+
+    fn op_tmuli(&mut self, operands: &operands::RRI) -> Result<()> {
+        self.do_simple_rri(operands, ternary::tmul)
+    }
+
+    fn op_tcmpi(&mut self, operands: &operands::RRI) -> Result<()> {
+        self.do_simple_rri(operands, ternary::tcmp)
+    }
+
+    fn op_shfi(&mut self, operands: &operands::RRI) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_add(&mut self, operands: operands::RRR) -> Result<()> {
+    fn op_addi(&mut self, operands: &operands::RRI) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_mul(&mut self, operands: operands::RR) -> Result<()> {
+    fn op_lui(&mut self, operands: &operands::RI) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_div(&mut self, operands: operands::RR) -> Result<()> {
+    fn op_lsr(&mut self, operands: &operands::LoadSystem) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_andi(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_ssr(&mut self, operands: &operands::StoreSystem) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_ori(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_lt(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_tmuli(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_lh(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_tcmpi(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_lw(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_shfi(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_st(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_addi(&mut self, operands: operands::RRI) -> Result<()> {
+    fn op_sh(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_lui(&mut self, operands: operands::RI) -> Result<()> {
+    fn op_sw(&mut self, operands: &operands::Memory) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_lsr(&mut self, operands: operands::LoadSystem) -> Result<()> {
+    fn op_bt(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_ssr(&mut self, operands: operands::StoreSystem) -> Result<()> {
+    fn op_b0(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_lt(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_b1(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_lh(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_bt0(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_lw(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_bt1(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_st(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_b01(&mut self, operands: &operands::Branch) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_sh(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_jmp(&mut self, operands: &operands::Jump) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_sw(&mut self, operands: operands::Memory) -> Result<()> {
+    fn op_call(&mut self, operands: &operands::Jump) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_bt(&mut self, operands: operands::Branch) -> Result<()> {
+    fn op_jmpr(&mut self, operands: &operands::R) -> Result<()> {
         unimplemented!()
     }
 
-    fn op_b0(&mut self, operands: operands::Branch) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_b1(&mut self, operands: operands::Branch) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_bt0(&mut self, operands: operands::Branch) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_bt1(&mut self, operands: operands::Branch) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_b01(&mut self, operands: operands::Branch) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_jmp(&mut self, operands: operands::Jump) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_call(&mut self, operands: operands::Jump) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_jmpr(&mut self, operands: operands::R) -> Result<()> {
-        unimplemented!()
-    }
-
-    fn op_callr(&mut self, operands: operands::R) -> Result<()> {
+    fn op_callr(&mut self, operands: &operands::R) -> Result<()> {
         unimplemented!()
     }
 

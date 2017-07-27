@@ -152,49 +152,6 @@ pub trait Ternary {
         Ok(())
     }
 
-    fn negate(&mut self) {
-        mutate_trytes(self, Tryte::neg);
-    }
-
-    fn and(&mut self, rhs: &Self) {
-        mutate2_trits(self, rhs, Trit::bitand);
-    }
-
-    fn or(&mut self, rhs: &Self) {
-        mutate2_trits(self, rhs, Trit::bitor);
-    }
-
-    fn tcmp(&mut self, rhs: &Self) {
-        mutate2_trits(self, rhs, Trit::tcmp)
-    }
-
-    fn tmul(&mut self, rhs: &Self) {
-        mutate2_trits(self, rhs, Trit::mul)
-    }
-
-    fn add(&mut self, rhs: &Self, carry: Trit) -> Trit {
-        let mut carry = carry;
-
-        for i in 0..self.trit_len() {
-            let a = self.get_trit(i);
-            let b = rhs.get_trit(i);
-            let (c, _carry) = a.add_with_carry(b, carry);
-            carry = _carry;
-            self.set_trit(i, c);
-        }
-
-        carry
-    }
-
-    fn multiply(&mut self, lhs: &Self, rhs: &Self) {
-        let len = rhs.trit_len();
-        for i in 0..len {
-            let sign = rhs.get_trit(i);
-            let carry = add_mul(self, lhs, sign, i);
-            self.set_trit(i + len, carry);
-        }
-    }
-
     fn compare(&self, rhs: &Self) -> Trit {
         let mut cmp_trit = trit::ZERO;
 
@@ -212,6 +169,26 @@ pub trait Ternary {
     }
 }
 
+pub fn negate<T: Ternary + ?Sized>(dest: &mut T, src: &T) {
+    zip_trytes(dest, src, Tryte::neg)
+}
+
+pub fn and<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
+    zip2_trits(dest, lhs, rhs, Trit::bitand)
+}
+
+pub fn or<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
+    zip2_trits(dest, lhs, rhs, Trit::bitor)
+}
+
+pub fn tcmp<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
+    zip2_trits(dest, lhs, rhs, Trit::tcmp)
+}
+
+pub fn tmul<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
+    zip2_trits(dest, lhs, rhs, Trit::mul)
+}
+
 fn read_trits<T: Ternary + ?Sized>(dest: &mut T, trits: &[Trit]) -> Result<()> {
     if trits.len() != dest.trit_len() {
         return Err(Error::InvalidDataLength(dest.trit_len(), trits.len()));
@@ -224,15 +201,38 @@ fn read_trits<T: Ternary + ?Sized>(dest: &mut T, trits: &[Trit]) -> Result<()> {
     Ok(())
 }
 
-fn add_mul<T: Ternary + ?Sized>(lhs: &mut T, rhs: &T, sign: Trit, offset: usize) -> Trit {
+pub fn add<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T, carry: Trit) -> Trit {
+    let mut carry = carry;
+
+    for i in 0..lhs.trit_len() {
+        let a = lhs.get_trit(i);
+        let b = rhs.get_trit(i);
+        let (c, _carry) = a.add_with_carry(b, carry);
+        carry = _carry;
+        dest.set_trit(i, c);
+    }
+
+    carry
+}
+
+pub fn multiply<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
+    let len = rhs.trit_len();
+    for i in 0..len {
+        let sign = rhs.get_trit(i);
+        let carry = add_mul(dest, lhs, sign, i);
+        dest.set_trit(i + len, carry);
+    }
+}
+
+fn add_mul<T: Ternary + ?Sized>(dest: &mut T, src: &T, sign: Trit, offset: usize) -> Trit {
     let mut carry = trit::ZERO;
 
-    for i in 0..rhs.trit_len() {
-        let a = lhs.get_trit(i + offset);
-        let b = rhs.get_trit(i);
+    for i in 0..src.trit_len() {
+        let a = dest.get_trit(i + offset);
+        let b = src.get_trit(i);
         let (c, _carry) = a.add_with_carry(b * sign, carry);
         carry = _carry;
-        lhs.set_trit(i + offset, c);
+        dest.set_trit(i + offset, c);
     }
 
     carry
@@ -251,6 +251,54 @@ pub fn shift<T: Ternary + ?Sized>(dest: &mut T, src: &T, offset: isize) {
 
         let trit = src.get_trit(i);
         dest.set_trit(i_dest as usize, trit);
+    }
+}
+
+fn zip_trits<T, F>(dest: &mut T, lhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Trit) -> Trit,
+{
+    for i in 0..lhs.trit_len() {
+        let trit = lhs.get_trit(i);
+        dest.set_trit(i, f(trit));
+    }
+}
+
+fn zip_trytes<T, F>(dest: &mut T, lhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Tryte) -> Tryte,
+{
+    for i in 0..lhs.tryte_len() {
+        let tryte = lhs.get_tryte(i);
+        dest.set_tryte(i, f(tryte));
+    }
+}
+
+fn zip2_trits<T, F>(dest: &mut T, lhs: &T, rhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Trit, Trit) -> Trit,
+{
+    for i in 0..rhs.trit_len() {
+        let a = lhs.get_trit(i);
+        let b = rhs.get_trit(i);
+        let c = f(a, b);
+        dest.set_trit(i, c);
+    }
+}
+
+fn zip2_trytes<T, F>(dest: &mut T, lhs: &T, rhs: &T, f: F)
+where
+    T: Ternary + ?Sized,
+    F: Fn(Tryte, Tryte) -> Tryte,
+{
+    for i in 0..rhs.tryte_len() {
+        let a = lhs.get_tryte(i);
+        let b = rhs.get_tryte(i);
+        let c = f(a, b);
+        dest.set_tryte(i, c);
     }
 }
 

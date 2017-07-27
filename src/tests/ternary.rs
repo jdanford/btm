@@ -157,7 +157,7 @@ fn ternary_negate() {
 }
 
 fn tryte4_negate(trytes: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes(trytes, |ternary| { ternary.negate(); })
+    with_cloned_trytes2(&TRYTE4_0, trytes, ternary::negate)
 }
 
 #[test]
@@ -174,7 +174,7 @@ fn ternary_and() {
 }
 
 fn tryte4_and(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.and(rhs); })
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, ternary::and)
 }
 
 #[test]
@@ -191,7 +191,7 @@ fn ternary_or() {
 }
 
 fn tryte4_or(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.or(rhs); })
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, ternary::or)
 }
 
 #[test]
@@ -214,7 +214,7 @@ fn ternary_tcmp() {
 }
 
 fn tryte4_tcmp(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.tcmp(rhs); })
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, ternary::tcmp)
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn ternary_tmul() {
 }
 
 fn tryte4_tmul(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.tmul(rhs); })
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, ternary::tmul)
 }
 
 #[test]
@@ -308,9 +308,7 @@ fn ternary_multiply() {
 }
 
 fn tryte4_mul(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, |dest, lhs, rhs| {
-        dest.multiply(lhs, rhs);
-    })
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, ternary::multiply)
 }
 
 #[test]
