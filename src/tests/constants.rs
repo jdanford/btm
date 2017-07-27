@@ -50,19 +50,21 @@ pub const TRYTE2_256: [Tryte; 2] = [TRYTE_256, TRYTE_0];
 pub const TRYTE2_512: [Tryte; 2] = [TRYTE_NEG217, TRYTE_1];
 pub const TRYTE2_4096: [Tryte; 2] = [TRYTE_NEG278, TRYTE_6];
 
-pub const TRYTE4_MIN: [Tryte; 4] = [TRYTE_MIN, TRYTE_MIN, TRYTE_MIN, TRYTE_MIN];
+pub const TRYTE4_MIN: [Tryte; 4] = [TRYTE_MIN; 4];
 pub const TRYTE4_NEG1073741808: [Tryte; 4] = [TRYTE_105, TRYTE_NEG317, TRYTE_167, TRYTE_NEG3];
 pub const TRYTE4_NEG4096: [Tryte; 4] = [TRYTE_278, TRYTE_NEG6, TRYTE_0, TRYTE_0];
 pub const TRYTE4_NEG81: [Tryte; 4] = [TRYTE_NEG81, TRYTE_0, TRYTE_0, TRYTE_0];
 pub const TRYTE4_NEG64: [Tryte; 4] = [TRYTE_NEG64, TRYTE_0, TRYTE_0, TRYTE_0];
 pub const TRYTE4_NEG1: [Tryte; 4] = [TRYTE_NEG1, TRYTE_0, TRYTE_0, TRYTE_0];
-pub const TRYTE4_0: [Tryte; 4] = [TRYTE_0, TRYTE_0, TRYTE_0, TRYTE_0];
+pub const TRYTE4_0: [Tryte; 4] = [TRYTE_0; 4];
 pub const TRYTE4_1: [Tryte; 4] = [TRYTE_1, TRYTE_0, TRYTE_0, TRYTE_0];
 pub const TRYTE4_64: [Tryte; 4] = [TRYTE_64, TRYTE_0, TRYTE_0, TRYTE_0];
 pub const TRYTE4_81: [Tryte; 4] = [TRYTE_81, TRYTE_0, TRYTE_0, TRYTE_0];
 pub const TRYTE4_4096: [Tryte; 4] = [TRYTE_NEG278, TRYTE_6, TRYTE_0, TRYTE_0];
 pub const TRYTE4_1073741808: [Tryte; 4] = [TRYTE_NEG105, TRYTE_317, TRYTE_NEG167, TRYTE_3];
-pub const TRYTE4_MAX: [Tryte; 4] = [TRYTE_MAX, TRYTE_MAX, TRYTE_MAX, TRYTE_MAX];
+pub const TRYTE4_MAX: [Tryte; 4] = [TRYTE_MAX; 4];
+
+pub const TRYTE12_0: [Tryte; 12] = [TRYTE_0; 12];
 
 pub const BYTES_MIN: [u8; 8] = [
     0b11_11_11_11,

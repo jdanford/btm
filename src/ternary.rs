@@ -233,6 +233,22 @@ fn add_mul<T: Ternary + ?Sized>(lhs: &mut T, rhs: &T, sign: Trit, offset: usize)
     carry
 }
 
+pub fn shift<T: Ternary + ?Sized>(dest: &mut T, src: &T, offset: isize) {
+    let src_len = src.trit_len();
+    let dest_len = src_len * 3;
+    let dest_offset = offset + src_len as isize;
+
+    for i in 0..src_len {
+        let i_dest = i as isize + dest_offset;
+        if i_dest < 0 || dest_len as isize <= i_dest {
+            continue;
+        }
+
+        let trit = src.get_trit(i);
+        dest.set_trit(i_dest as usize, trit);
+    }
+}
+
 fn mutate_trits<T, F>(lhs: &mut T, f: F)
 where
     T: Ternary + ?Sized,

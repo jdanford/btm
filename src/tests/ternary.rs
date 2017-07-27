@@ -3,65 +3,10 @@ use std::io::Cursor;
 use error::Result;
 use trit;
 use tryte::Tryte;
+use ternary;
 use ternary::*;
 
 use tests::constants::*;
-
-fn clone_slice<T: Clone>(slice: &[T]) -> Vec<T> {
-    let mut vec = Vec::new();
-    vec.extend_from_slice(slice);
-    vec
-}
-
-fn with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Vec<Tryte>
-where
-    F: FnMut(&mut [Tryte]),
-{
-    let mut trytes = clone_slice(trytes);
-    f(&mut trytes[..]);
-    trytes
-}
-
-fn with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Vec<Tryte>
-where
-    F: FnMut(&mut [Tryte], &[Tryte]),
-{
-    let mut trytes1 = clone_slice(trytes1);
-    f(&mut trytes1[..], &trytes2);
-    trytes1
-}
-
-fn with_cloned_trytes3<F>(
-    trytes1: &[Tryte],
-    trytes2: &[Tryte],
-    trytes3: &[Tryte],
-    mut f: F,
-) -> Vec<Tryte>
-where
-    F: FnMut(&mut [Tryte], &[Tryte], &[Tryte]),
-{
-    let mut trytes1 = clone_slice(trytes1);
-    f(&mut trytes1[..], &trytes2, &trytes3);
-    trytes1
-}
-
-fn try_with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
-where
-    F: FnMut(&mut [Tryte]) -> Result<()>,
-{
-    let mut trytes = clone_slice(trytes);
-    f(&mut trytes[..])?;
-    Ok(trytes)
-}
-
-fn try_with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
-where
-    F: FnMut(&mut [Tryte], &[Tryte]) -> Result<()>,
-{
-    let mut trytes1 = clone_slice(trytes1);
-    f(&mut trytes1[..], &trytes2)?;
-    Ok(trytes1)
-}
 
 #[test]
 fn ternary_into_i64() {
@@ -85,7 +30,7 @@ fn ternary_read_i64() {
 }
 
 fn tryte4_from_int(n: i64) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_i64(n))
+    try_with_cloned_trytes(&TRYTE4_0, |ternary| ternary.read_i64(n))
 }
 
 #[test]
@@ -98,7 +43,7 @@ fn ternary_read_bytes() {
 }
 
 fn tryte4_from_bytes(bytes: &[u8]) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| {
+    try_with_cloned_trytes(&TRYTE4_0, |ternary| {
         ternary.read_bytes(&mut Cursor::new(bytes))
     })
 }
@@ -128,7 +73,7 @@ fn ternary_read_hytes() {
 }
 
 fn tryte4_from_hyte_str(s: &str) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_hytes(s))
+    try_with_cloned_trytes(&TRYTE4_0, |ternary| ternary.read_hytes(s))
 }
 
 #[test]
@@ -171,7 +116,7 @@ fn ternary_read_trits() {
 }
 
 fn tryte4_from_trit_str(s: &str) -> Result<Vec<Tryte>> {
-    try_with_cloned_trytes(&TRYTE4_0, |ref mut ternary| ternary.read_trits(s))
+    try_with_cloned_trytes(&TRYTE4_0, |ternary| ternary.read_trits(s))
 }
 
 #[test]
@@ -212,7 +157,7 @@ fn ternary_negate() {
 }
 
 fn tryte4_negate(trytes: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes(trytes, |ref mut ternary| { ternary.negate(); })
+    with_cloned_trytes(trytes, |ternary| { ternary.negate(); })
 }
 
 #[test]
@@ -229,7 +174,7 @@ fn ternary_and() {
 }
 
 fn tryte4_and(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |ref mut lhs, ref rhs| { lhs.and(rhs); })
+    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.and(rhs); })
 }
 
 #[test]
@@ -246,7 +191,7 @@ fn ternary_or() {
 }
 
 fn tryte4_or(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |ref mut lhs, ref rhs| { lhs.or(rhs); })
+    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.or(rhs); })
 }
 
 #[test]
@@ -269,7 +214,7 @@ fn ternary_tcmp() {
 }
 
 fn tryte4_tcmp(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |ref mut lhs, ref rhs| { lhs.tcmp(rhs); })
+    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.tcmp(rhs); })
 }
 
 #[test]
@@ -294,30 +239,7 @@ fn ternary_tmul() {
 }
 
 fn tryte4_tmul(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |ref mut lhs, ref rhs| { lhs.tmul(rhs); })
-}
-
-#[test]
-fn ternary_add() {
-    assert_eq!(&TRYTE4_0, &tryte4_add(&TRYTE4_1, &TRYTE4_NEG1)[..]);
-    assert_eq!(&TRYTE4_0, &tryte4_add(&TRYTE4_MAX, &TRYTE4_MIN)[..]);
-
-    assert_eq!(&TRYTE4_MIN, &tryte4_add(&TRYTE4_MIN, &TRYTE4_0)[..]);
-    assert_eq!(&TRYTE4_NEG1, &tryte4_add(&TRYTE4_NEG1, &TRYTE4_0)[..]);
-    assert_eq!(&TRYTE4_0, &tryte4_add(&TRYTE4_0, &TRYTE4_0)[..]);
-    assert_eq!(&TRYTE4_1, &tryte4_add(&TRYTE4_1, &TRYTE4_0)[..]);
-    assert_eq!(&TRYTE4_MAX, &tryte4_add(&TRYTE4_MAX, &TRYTE4_0)[..]);
-
-    assert_eq!(&TRYTE4_MIN, &tryte4_add(&TRYTE4_0, &TRYTE4_MIN)[..]);
-    assert_eq!(&TRYTE4_NEG1, &tryte4_add(&TRYTE4_0, &TRYTE4_NEG1)[..]);
-    assert_eq!(&TRYTE4_1, &tryte4_add(&TRYTE4_0, &TRYTE4_1)[..]);
-    assert_eq!(&TRYTE4_MAX, &tryte4_add(&TRYTE4_0, &TRYTE4_MAX)[..]);
-}
-
-fn tryte4_add(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes2(trytes1, trytes2, |ref mut lhs, ref rhs| {
-        let _ = lhs.add(rhs, trit::ZERO);
-    })
+    with_cloned_trytes2(trytes1, trytes2, |lhs, rhs| { lhs.tmul(rhs); })
 }
 
 #[test]
@@ -386,10 +308,386 @@ fn ternary_multiply() {
 }
 
 fn tryte4_mul(trytes1: &[Tryte], trytes2: &[Tryte]) -> Vec<Tryte> {
-    with_cloned_trytes3(
-        &TRYTE4_0,
-        trytes1,
-        trytes2,
-        |ref mut dest, ref lhs, ref rhs| { dest.multiply(lhs, rhs); },
-    )
+    with_cloned_trytes3(&TRYTE4_0, trytes1, trytes2, |dest, lhs, rhs| {
+        dest.multiply(lhs, rhs);
+    })
+}
+
+#[test]
+fn ternary_shift() {
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000000000000000000001T000110T001100T011000T",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -25)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000000000000000000001T000110T001100T011000T1",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -24)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000000000000000000001T000110T001100T011000T10",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -23)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000000000000000001T000110T001100T011000T100",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -22)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000000000000000001T000110T001100T011000T1000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -21)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000000000000000001T000110T001100T011000T10000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -20)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000000000000001T000110T001100T011000T100000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -19)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000000000000001T000110T001100T011000T1000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -18)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000000000000001T000110T001100T011000T10000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -17)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000000000001T000110T001100T011000T100000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -16)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000000000001T000110T001100T011000T1000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -15)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000000000001T000110T001100T011000T10000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -14)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000000001T000110T001100T011000T100000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -13)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000000001T000110T001100T011000T1000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -12)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000000001T000110T001100T011000T10000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -11)
+    );
+
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000000001T000110T001100T011000T100000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -10)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000000001T000110T001100T011000T1000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -9)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000000001T000110T001100T011000T10000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -8)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000000001T000110T001100T011000T100000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -7)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000000001T000110T001100T011000T1000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -6)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000000001T000110T001100T011000T10000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -5)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000000001T000110T001100T011000T100000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -4)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000000001T000110T001100T011000T1000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -3)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000000001T000110T001100T011000T10000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -2)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000000001T000110T001100T011000T100000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", -1)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000000001T000110T001100T011000T1000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 0)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000000001T000110T001100T011000T10000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 1)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000000001T000110T001100T011000T100000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 2)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000000001T000110T001100T011000T1000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 3)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000000001T000110T001100T011000T10000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 4)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000000001T000110T001100T011000T100000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 5)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000000001T000110T001100T011000T1000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 6)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000000001T000110T001100T011000T10000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 7)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000000001T000110T001100T011000T100000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 8)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000000001T000110T001100T011000T1000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 9)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000000001T000110T001100T011000T10000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 10)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000000001T000110T001100T011000T100000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 11)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000000001T000110T001100T011000T1000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 12)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000000001T000110T001100T011000T10000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 13)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000000001T000110T001100T011000T100000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 14)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000000001T000110T001100T011000T1000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 15)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000000001T000110T001100T011000T10000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 16)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00000001T000110T001100T011000T100000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 17)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0000001T000110T001100T011000T1000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 18)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "000001T000110T001100T011000T10000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 19)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "00001T000110T001100T011000T100000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 20)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "0001T000110T001100T011000T1000000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 21)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "001T000110T001100T011000T10000000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 22)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "01T000110T001100T011000T100000000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 23)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "1T000110T001100T011000T1000000000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 24)
+    );
+    assert_eq!(
+        tryte12_from_trit_str(
+            "T000110T001100T011000T10000000000000000000000000000000000000000000000000",
+        ),
+        tryte4_shift("1T000110T001100T011000T1", 25)
+    );
+}
+
+fn tryte4_shift(trit_str: &str, offset: isize) -> Result<Vec<Tryte>> {
+    let trytes = tryte4_from_trit_str(trit_str)?;
+    try_with_cloned_trytes2(&TRYTE12_0, &trytes[..], |dest, src| {
+        ternary::shift(dest, src, offset);
+        Ok(())
+    })
+}
+
+fn tryte12_from_trit_str(s: &str) -> Result<Vec<Tryte>> {
+    try_with_cloned_trytes(&TRYTE12_0, |ternary| ternary.read_trits(s))
+}
+
+fn clone_slice<T: Clone>(slice: &[T]) -> Vec<T> {
+    let mut vec = Vec::new();
+    vec.extend_from_slice(slice);
+    vec
+}
+
+fn with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte]),
+{
+    let mut trytes = clone_slice(trytes);
+    f(&mut trytes[..]);
+    trytes
+}
+
+fn with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte], &[Tryte]),
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2);
+    trytes1
+}
+
+fn with_cloned_trytes3<F>(
+    trytes1: &[Tryte],
+    trytes2: &[Tryte],
+    trytes3: &[Tryte],
+    mut f: F,
+) -> Vec<Tryte>
+where
+    F: FnMut(&mut [Tryte], &[Tryte], &[Tryte]),
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2, &trytes3);
+    trytes1
+}
+
+fn try_with_cloned_trytes<F>(trytes: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
+where
+    F: FnMut(&mut [Tryte]) -> Result<()>,
+{
+    let mut trytes = clone_slice(trytes);
+    f(&mut trytes[..])?;
+    Ok(trytes)
+}
+
+fn try_with_cloned_trytes2<F>(trytes1: &[Tryte], trytes2: &[Tryte], mut f: F) -> Result<Vec<Tryte>>
+where
+    F: FnMut(&mut [Tryte], &[Tryte]) -> Result<()>,
+{
+    let mut trytes1 = clone_slice(trytes1);
+    f(&mut trytes1[..], &trytes2)?;
+    Ok(trytes1)
 }
