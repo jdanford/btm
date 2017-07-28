@@ -151,22 +151,22 @@ pub trait Ternary {
 
         Ok(())
     }
+}
 
-    fn compare(&self, rhs: &Self) -> Trit {
-        let mut cmp_trit = trit::ZERO;
+pub fn compare<T: Ternary + ?Sized>(lhs: &T, rhs: &T) -> Trit {
+    let mut cmp_trit = trit::ZERO;
 
-        for i in (0..self.trit_len()).rev() {
-            let a = self.get_trit(i);
-            let b = rhs.get_trit(i);
-            cmp_trit = a.tcmp(b);
+    for i in (0..lhs.trit_len()).rev() {
+        let a = lhs.get_trit(i);
+        let b = rhs.get_trit(i);
+        cmp_trit = a.tcmp(b);
 
-            if cmp_trit != trit::ZERO {
-                break;
-            }
+        if cmp_trit != trit::ZERO {
+            break;
         }
-
-        cmp_trit
     }
+
+    cmp_trit
 }
 
 pub fn negate<T: Ternary + ?Sized>(dest: &mut T, src: &T) {

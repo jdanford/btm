@@ -136,15 +136,27 @@ fn get_trit_str(trytes: &[Tryte]) -> String {
 
 #[test]
 fn ternary_cmp() {
-    assert_eq!(trit::ZERO, TRYTE4_0.compare(&TRYTE4_0));
-    assert_eq!(trit::NEG, TRYTE4_0.compare(&TRYTE4_MAX));
-    assert_eq!(trit::POS, TRYTE4_0.compare(&TRYTE4_MIN));
-    assert_eq!(trit::POS, TRYTE4_MAX.compare(&TRYTE4_0));
-    assert_eq!(trit::POS, TRYTE4_MAX.compare(&TRYTE4_MIN));
-    assert_eq!(trit::ZERO, TRYTE4_MAX.compare(&TRYTE4_MAX));
-    assert_eq!(trit::NEG, TRYTE4_MIN.compare(&TRYTE4_0));
-    assert_eq!(trit::NEG, TRYTE4_MIN.compare(&TRYTE4_MAX));
-    assert_eq!(trit::ZERO, TRYTE4_MIN.compare(&TRYTE4_MIN));
+    assert_eq!(trit::ZERO, ternary::compare(&TRYTE4_0[..], &TRYTE4_0[..]));
+    assert_eq!(trit::NEG, ternary::compare(&TRYTE4_0[..], &TRYTE4_MAX[..]));
+    assert_eq!(trit::POS, ternary::compare(&TRYTE4_0[..], &TRYTE4_MIN[..]));
+    assert_eq!(trit::POS, ternary::compare(&TRYTE4_MAX[..], &TRYTE4_0[..]));
+    assert_eq!(
+        trit::POS,
+        ternary::compare(&TRYTE4_MAX[..], &TRYTE4_MIN[..])
+    );
+    assert_eq!(
+        trit::ZERO,
+        ternary::compare(&TRYTE4_MAX[..], &TRYTE4_MAX[..])
+    );
+    assert_eq!(trit::NEG, ternary::compare(&TRYTE4_MIN[..], &TRYTE4_0[..]));
+    assert_eq!(
+        trit::NEG,
+        ternary::compare(&TRYTE4_MIN[..], &TRYTE4_MAX[..])
+    );
+    assert_eq!(
+        trit::ZERO,
+        ternary::compare(&TRYTE4_MIN[..], &TRYTE4_MIN[..])
+    );
 }
 
 #[test]
