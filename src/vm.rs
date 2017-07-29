@@ -6,7 +6,7 @@ use ternary::tryte;
 use ternary::Tryte;
 use ternary::Ternary;
 use registers;
-use registers::{StandardRegister, SystemRegister, RegisterFile};
+use registers::{StandardRegister, RegisterFile};
 use operands;
 use instructions::Instruction;
 
@@ -95,19 +95,23 @@ impl<'a> VM<'a> {
     }
 
     fn op_and(&mut self, operands: &operands::RRR) -> Result<()> {
-        self.do_simple_rrr(operands, ternary::and)
+        self.do_simple_rrr(operands, ternary::and);
+        Ok(())
     }
 
     fn op_or(&mut self, operands: &operands::RRR) -> Result<()> {
-        self.do_simple_rrr(operands, ternary::or)
+        self.do_simple_rrr(operands, ternary::or);
+        Ok(())
     }
 
     fn op_tmul(&mut self, operands: &operands::RRR) -> Result<()> {
-        self.do_simple_rrr(operands, ternary::tmul)
+        self.do_simple_rrr(operands, ternary::tmul);
+        Ok(())
     }
 
     fn op_tcmp(&mut self, operands: &operands::RRR) -> Result<()> {
-        self.do_simple_rrr(operands, ternary::tcmp)
+        self.do_simple_rrr(operands, ternary::tcmp);
+        Ok(())
     }
 
     fn op_cmp(&mut self, operands: &operands::RRR) -> Result<()> {
@@ -125,8 +129,9 @@ impl<'a> VM<'a> {
 
     fn op_shf(&mut self, operands: &operands::RRR) -> Result<()> {
         let offset = (&self.registers[operands.rhs]).into_i64() as isize;
-        self.do_shift(operands.lhs, offset)?;
-        self.copy_shift_result(operands.dest)
+        self.do_shift(operands.lhs, offset);
+        self.copy_shift_result(operands.dest);
+        Ok(())
     }
 
     fn op_add(&mut self, operands: &operands::RRR) -> Result<()> {
@@ -145,7 +150,20 @@ impl<'a> VM<'a> {
     }
 
     fn op_mul(&mut self, operands: &operands::RR) -> Result<()> {
-        unimplemented!()
+        let i = WORD_LEN;
+        let j = WORD_LEN * 2;
+
+        let tmp_dest = &mut self.scratch_space[0..j];
+
+        {
+            let lhs = &self.registers[operands.lhs];
+            let rhs = &self.registers[operands.rhs];
+            ternary::multiply(tmp_dest, lhs, rhs)
+        }
+
+        self.registers[registers::LO].copy_from_slice(&tmp_dest[0..i]);
+        self.registers[registers::HI].copy_from_slice(&tmp_dest[i..j]);
+        Ok(())
     }
 
     fn op_div(&mut self, operands: &operands::RR) -> Result<()> {
@@ -153,29 +171,45 @@ impl<'a> VM<'a> {
     }
 
     fn op_andi(&mut self, operands: &operands::RRI) -> Result<()> {
-        self.do_simple_rri(operands, ternary::and)
+        self.do_simple_rri(operands, ternary::and);
+        Ok(())
     }
 
     fn op_ori(&mut self, operands: &operands::RRI) -> Result<()> {
-        self.do_simple_rri(operands, ternary::or)
+        self.do_simple_rri(operands, ternary::or);
+        Ok(())
     }
 
     fn op_tmuli(&mut self, operands: &operands::RRI) -> Result<()> {
-        self.do_simple_rri(operands, ternary::tmul)
+        self.do_simple_rri(operands, ternary::tmul);
+        Ok(())
     }
 
     fn op_tcmpi(&mut self, operands: &operands::RRI) -> Result<()> {
-        self.do_simple_rri(operands, ternary::tcmp)
+        self.do_simple_rri(operands, ternary::tcmp);
+        Ok(())
     }
 
     fn op_shfi(&mut self, operands: &operands::RRI) -> Result<()> {
         let offset = operands.immediate.into_i64() as isize;
-        self.do_shift(operands.src, offset)?;
-        self.copy_shift_result(operands.dest)
+        self.do_shift(operands.src, offset);
+        self.copy_shift_result(operands.dest);
+        Ok(())
     }
 
     fn op_addi(&mut self, operands: &operands::RRI) -> Result<()> {
-        unimplemented!()
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+        let carry = {
+            let lhs = &self.registers[operands.src];
+            let rhs = &operands.immediate;
+            ternary::add(tmp_dest, lhs, rhs, trit::ZERO)
+        };
+
+        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.registers[registers::HI].clear();
+        self.registers[registers::HI].set_trit(0, carry);
+        self.registers[registers::ZERO].clear();
+        Ok(())
     }
 
     fn op_lui(&mut self, operands: &operands::RI) -> Result<()> {
@@ -262,7 +296,7 @@ impl<'a> VM<'a> {
         unimplemented!()
     }
 
-    fn do_simple_rrr<F>(&mut self, operands: &operands::RRR, f: F) -> Result<()>
+    fn do_simple_rrr<F>(&mut self, operands: &operands::RRR, f: F)
     where
         F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
     {
@@ -276,10 +310,9 @@ impl<'a> VM<'a> {
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn do_simple_rri<F>(&mut self, operands: &operands::RRI, f: F) -> Result<()>
+    fn do_simple_rri<F>(&mut self, operands: &operands::RRI, f: F)
     where
         F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
     {
@@ -293,17 +326,15 @@ impl<'a> VM<'a> {
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn do_shift(&mut self, src_reg: StandardRegister, offset: isize) -> Result<()> {
+    fn do_shift(&mut self, src_reg: StandardRegister, offset: isize) {
         let tmp_dest = &mut self.scratch_space[0..(WORD_LEN * 3)];
         let src = &self.registers[src_reg];
         ternary::shift(tmp_dest, src, offset);
-        Ok(())
     }
 
-    fn copy_shift_result(&mut self, dest_reg: StandardRegister) -> Result<()> {
+    fn copy_shift_result(&mut self, dest_reg: StandardRegister) {
         let i = WORD_LEN;
         let j = WORD_LEN * 2;
         let k = WORD_LEN * 3;
@@ -324,6 +355,5 @@ impl<'a> VM<'a> {
         }
 
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 }
