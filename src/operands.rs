@@ -25,7 +25,7 @@ impl Operand for Empty {
         } else {
             let mut s = String::new();
             word.write_trits(&mut s)?;
-            Err(Error::InvalidInstruction(s))
+            Err(Error::InvalidEncoding(s))
         }
     }
 }

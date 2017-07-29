@@ -213,15 +213,40 @@ impl<'a> VM<'a> {
     }
 
     fn op_lui(&mut self, operands: &operands::RI) -> Result<()> {
-        unimplemented!()
+        {
+            let i = WORD_LEN;
+            let j = WORD_LEN * 2;
+            let mut dest = &mut self.registers[operands.dest][i..j];
+            dest.copy_from_slice(&operands.immediate);
+        }
+
+        self.registers[registers::ZERO].clear();
+        Ok(())
     }
 
     fn op_lsr(&mut self, operands: &operands::LoadSystem) -> Result<()> {
-        unimplemented!()
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+
+        {
+            let src = &self.registers[operands.src];
+            tmp_dest.copy_from_slice(src);
+        }
+
+        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.registers[registers::ZERO].clear();
+        Ok(())
     }
 
     fn op_ssr(&mut self, operands: &operands::StoreSystem) -> Result<()> {
-        unimplemented!()
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+
+        {
+            let src = &self.registers[operands.src];
+            tmp_dest.copy_from_slice(src);
+        }
+
+        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        Ok(())
     }
 
     fn op_lt(&mut self, operands: &operands::Memory) -> Result<()> {
