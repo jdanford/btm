@@ -14,7 +14,7 @@ const SCRATCH_SPACE_LEN: usize = WORD_LEN * 4;
 
 pub struct VM<'a> {
     running: bool,
-    pc: usize,
+    pc: u32,
     registers: RegisterFile,
     scratch_space: [Tryte; SCRATCH_SPACE_LEN],
     memory: &'a mut [Tryte],
@@ -31,7 +31,7 @@ impl<'a> VM<'a> {
         }
     }
 
-    pub fn run(&mut self, pc: usize) -> Result<()> {
+    pub fn run(&mut self, pc: u32) -> Result<()> {
         self.pc = pc;
         self.running = true;
 
@@ -88,7 +88,7 @@ impl<'a> VM<'a> {
     fn next_instruction(&mut self) -> Result<Instruction> {
         let i = self.pc as usize;
         let j = i + WORD_LEN;
-        self.pc += WORD_LEN;
+        self.pc += WORD_LEN as u32;
 
         let word = &self.memory[i..j];
         Instruction::from_word(word)
@@ -298,19 +298,29 @@ impl<'a> VM<'a> {
     }
 
     fn op_jmp(&mut self, operands: &operands::Jump) -> Result<()> {
-        unimplemented!()
+        let offset = self.get_jump_offset(operands);
+        self.do_rel_jump(offset);
+        Ok(())
     }
 
     fn op_call(&mut self, operands: &operands::Jump) -> Result<()> {
-        unimplemented!()
+        let offset = self.get_jump_offset(operands);
+        self.save_pc();
+        self.do_rel_jump(offset);
+        Ok(())
     }
 
     fn op_jmpr(&mut self, operands: &operands::R) -> Result<()> {
-        unimplemented!()
+        let offset = self.get_r_offset(operands);
+        self.do_rel_jump(offset);
+        Ok(())
     }
 
     fn op_callr(&mut self, operands: &operands::R) -> Result<()> {
-        unimplemented!()
+        let offset = self.get_r_offset(operands);
+        self.save_pc();
+        self.do_rel_jump(offset);
+        Ok(())
     }
 
     fn op_syscall(&mut self) -> Result<()> {
@@ -380,5 +390,25 @@ impl<'a> VM<'a> {
         }
 
         self.registers[registers::ZERO].clear();
+    }
+
+    fn get_jump_offset(&mut self, operands: &operands::Jump) -> i32 {
+        let mut offset_dest = &mut self.scratch_space[0..WORD_LEN];
+        offset_dest.copy_from_slice(&operands.offset[..]);
+        offset_dest.into_i64() as i32
+    }
+
+    fn get_r_offset(&self, operands: &operands::R) -> i32 {
+        let offset_src = &self.registers[operands.src];
+        offset_src.into_i64() as i32
+    }
+
+    fn save_pc(&mut self) {
+        self.registers[registers::RA].read_i64(self.pc as i64);
+    }
+
+    fn do_rel_jump(&mut self, offset: i32) {
+        let new_pc = (self.pc as i32 + offset) as u32;
+        self.pc = new_pc;
     }
 }
