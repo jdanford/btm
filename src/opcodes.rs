@@ -1,5 +1,5 @@
 use error::{Error, Result};
-use ternary::tables::TRIT4_TO_U8;
+use ternary::tables::TRIT4_TO_I8;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Opcode(u8);
@@ -43,7 +43,7 @@ pub const BREAK: Opcode = Opcode(35);
 
 impl Opcode {
     pub fn from_trit4(trit4: u8) -> Result<Opcode> {
-        let i = TRIT4_TO_U8[trit4 as usize];
+        let i = TRIT4_TO_I8[trit4 as usize] as u8;
         if i > BREAK.0 {
             return Err(Error::InvalidOpcode(i));
         }

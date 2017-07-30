@@ -1,9 +1,7 @@
 use std::convert::TryInto;
 use std::io::Cursor;
 
-use ternary::Result;
-use ternary::trit;
-use ternary::Trit;
+use ternary::{Result, trit, Trit};
 use ternary::tryte::*;
 
 use tests::constants::*;

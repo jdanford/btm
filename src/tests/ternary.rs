@@ -1,10 +1,7 @@
 use std::io::Cursor;
 
-use ternary::Result;
-use ternary::trit;
 use ternary;
-use ternary::Ternary;
-use ternary::Tryte;
+use ternary::{Result, Ternary, trit, Tryte};
 
 use tests::constants::*;
 

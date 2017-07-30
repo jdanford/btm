@@ -1,10 +1,8 @@
 use error::Result;
 use ternary;
 use ternary::constants::*;
-use ternary::trit;
-use ternary::tryte;
-use ternary::Tryte;
-use ternary::Ternary;
+use ternary::tables::TRIT4_TO_I8;
+use ternary::{Ternary, trit, Trit, tryte, Tryte};
 use registers;
 use registers::{StandardRegister, RegisterFile};
 use operands;
@@ -12,11 +10,14 @@ use instructions::Instruction;
 
 const SCRATCH_SPACE_LEN: usize = WORD_LEN * 4;
 
+const TRIT3_POS_OFFSET: i8 = 13;
+
 pub struct VM<'a> {
     running: bool,
     pc: u32,
     registers: RegisterFile,
     scratch_space: [Tryte; SCRATCH_SPACE_LEN],
+    jump_table: [i32; 4],
     memory: &'a mut [Tryte],
 }
 
@@ -27,6 +28,7 @@ impl<'a> VM<'a> {
             pc: 0,
             registers: RegisterFile::new(),
             scratch_space: [tryte::ZERO; SCRATCH_SPACE_LEN],
+            jump_table: [0; 4],
             memory: memory,
         }
     }
@@ -81,7 +83,6 @@ impl<'a> VM<'a> {
             Instruction::Callr(ref operands) => self.op_callr(operands),
             Instruction::Syscall => self.op_syscall(),
             Instruction::Break => self.op_break(),
-            _ => unreachable!(),
         }
     }
 
@@ -274,27 +275,45 @@ impl<'a> VM<'a> {
     }
 
     fn op_bt(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, offset, 0, 0);
+        Ok(())
     }
 
     fn op_b0(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, 0, offset, 0);
+        Ok(())
     }
 
     fn op_b1(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, 0, 0, offset);
+        Ok(())
     }
 
     fn op_bt0(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, offset, offset, 0);
+        Ok(())
     }
 
     fn op_bt1(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, offset, 0, offset);
+        Ok(())
     }
 
     fn op_b01(&mut self, operands: &operands::Branch) -> Result<()> {
-        unimplemented!()
+        let selector = self.get_branch_selector(operands);
+        let offset = self.get_branch_offset(operands);
+        self.do_branch(selector, 0, offset, offset);
+        Ok(())
     }
 
     fn op_jmp(&mut self, operands: &operands::Jump) -> Result<()> {
@@ -392,8 +411,31 @@ impl<'a> VM<'a> {
         self.registers[registers::ZERO].clear();
     }
 
+    fn get_branch_selector(&self, operands: &operands::Branch) -> Trit {
+        let raw_index = TRIT4_TO_I8[operands.index as usize];
+        let i = (raw_index + TRIT3_POS_OFFSET) as usize;
+        let src = &self.registers[operands.src];
+        src.get_trit(i)
+    }
+
+    fn do_branch(&mut self, selector: Trit, offset_t: i32, offset_0: i32, offset_1: i32) {
+        self.jump_table[trit::NEG.into_index()] = offset_t;
+        self.jump_table[trit::ZERO.into_index()] = offset_0;
+        self.jump_table[trit::POS.into_index()] = offset_1;
+
+        let i = selector.into_index();
+        let offset = self.jump_table[i];
+        self.do_rel_jump(offset);
+    }
+
     fn get_jump_offset(&mut self, operands: &operands::Jump) -> i32 {
         let mut offset_dest = &mut self.scratch_space[0..WORD_LEN];
+        offset_dest.copy_from_slice(&operands.offset[..]);
+        offset_dest.into_i64() as i32
+    }
+
+    fn get_branch_offset(&mut self, operands: &operands::Branch) -> i32 {
+        let mut offset_dest = &mut self.scratch_space[0..HALF_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
         offset_dest.into_i64() as i32
     }
@@ -404,11 +446,16 @@ impl<'a> VM<'a> {
     }
 
     fn save_pc(&mut self) {
-        self.registers[registers::RA].read_i64(self.pc as i64);
+        self.registers[registers::RA]
+            .read_i64(self.pc as i64)
+            .expect("ternary arithmetic error")
     }
 
     fn do_rel_jump(&mut self, offset: i32) {
-        let new_pc = (self.pc as i32 + offset) as u32;
-        self.pc = new_pc;
+        self.pc = self.rel_pc(offset);
+    }
+
+    fn rel_pc(&self, offset: i32) -> u32 {
+        (self.pc as i32 + offset) as u32
     }
 }

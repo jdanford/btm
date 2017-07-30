@@ -52,21 +52,25 @@ impl Trit {
         let (sum, carry) = TRIT3_TO_SUM_AND_CARRY[i];
         (Trit(sum), Trit(carry))
     }
+
+    pub fn into_index(self) -> usize {
+        self.0 as usize
+    }
 }
 
 fn trit2_index(a: Trit, b: Trit) -> usize {
-    (a.0 << 2 | b.0) as usize
+    a.into_index() << 2 | b.into_index()
 }
 
 fn trit3_index(a: Trit, b: Trit, c: Trit) -> usize {
-    (a.0 << 4 | b.0 << 2 | c.0) as usize
+    a.into_index() << 4 | b.into_index() << 2 | c.into_index()
 }
 
 static TRIT_TO_I16: [i16; 4] = [0, 1, 0, -1];
 
 impl Into<i16> for Trit {
     fn into(self) -> i16 {
-        TRIT_TO_I16[self.0 as usize]
+        TRIT_TO_I16[self.into_index()]
     }
 }
 
@@ -90,7 +94,7 @@ static TRIT_TO_CHAR: [char; 4] = [CHAR_ZERO, CHAR_POS, CHAR_INVALID, CHAR_NEG];
 
 impl Into<char> for Trit {
     fn into(self) -> char {
-        TRIT_TO_CHAR[self.0 as usize]
+        TRIT_TO_CHAR[self.into_index()]
     }
 }
 
@@ -122,7 +126,7 @@ static TRIT_TO_ORDERING: [Ordering; 4] = [
 
 impl Into<Ordering> for Trit {
     fn into(self) -> Ordering {
-        TRIT_TO_ORDERING[self.0 as usize]
+        TRIT_TO_ORDERING[self.into_index()]
     }
 }
 

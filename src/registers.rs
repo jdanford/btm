@@ -2,15 +2,14 @@ use std::ops::{Index, IndexMut};
 
 use error::{Error, Result};
 use ternary::constants::*;
-use ternary::tables::TRIT4_TO_U8;
-use ternary::tryte;
-use ternary::Tryte;
+use ternary::tables::TRIT4_TO_I8;
+use ternary::{tryte, Tryte};
 
 pub trait Register: Sized {
     const COUNT: usize;
 
     fn from_trit4(trit4: u8) -> Result<Self> {
-        let i = TRIT4_TO_U8[trit4 as usize];
+        let i = TRIT4_TO_I8[trit4 as usize] as u8;
         if i as usize >= Self::COUNT {
             return Err(Error::InvalidRegister(i));
         }

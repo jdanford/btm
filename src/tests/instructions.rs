@@ -1,8 +1,6 @@
 use error::Result;
 use ternary::constants::*;
-use ternary::trit;
-use ternary::tryte;
-use ternary::Ternary;
+use ternary::{Ternary, trit, tryte};
 use registers;
 use operands;
 use instructions::Instruction;
