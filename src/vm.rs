@@ -251,27 +251,33 @@ impl<'a> VM<'a> {
     }
 
     fn op_lt(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_load(operands, TRYTE_LEN);
+        Ok(())
     }
 
     fn op_lh(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_load(operands, HALF_LEN);
+        Ok(())
     }
 
     fn op_lw(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_load(operands, WORD_LEN);
+        Ok(())
     }
 
     fn op_st(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_store(operands, TRYTE_LEN);
+        Ok(())
     }
 
     fn op_sh(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_store(operands, HALF_LEN);
+        Ok(())
     }
 
     fn op_sw(&mut self, operands: &operands::Memory) -> Result<()> {
-        unimplemented!()
+        self.do_store(operands, WORD_LEN);
+        Ok(())
     }
 
     fn op_bt(&mut self, operands: &operands::Branch) -> Result<()> {
@@ -428,6 +434,33 @@ impl<'a> VM<'a> {
         self.do_rel_jump(offset);
     }
 
+    fn do_load(&mut self, operands: &operands::Memory, len: usize) {
+        let i = self.get_memory_addr(operands);
+        let j = i + len;
+
+        let src = &self.memory[i..j];
+        let dest = &mut self.registers[operands.dest][..len];
+        dest.copy_from_slice(src);
+    }
+
+    fn do_store(&mut self, operands: &operands::Memory, len: usize) {
+        let i = self.get_memory_addr(operands);
+        let j = i + len;
+
+        let dest = &mut self.memory[i..j];
+        let src = &self.registers[operands.src][..len];
+        dest.copy_from_slice(src);
+    }
+
+    fn get_memory_addr(&mut self, operands: &operands::Memory) -> usize {
+        let base_addr = {
+            let addr_src = &self.registers[operands.dest];
+            addr_src.into_i64() as u32
+        };
+        let offset = self.get_memory_offset(operands);
+        (base_addr as i32 + offset) as usize
+    }
+
     fn get_jump_offset(&mut self, operands: &operands::Jump) -> i32 {
         let mut offset_dest = &mut self.scratch_space[0..WORD_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
@@ -435,6 +468,12 @@ impl<'a> VM<'a> {
     }
 
     fn get_branch_offset(&mut self, operands: &operands::Branch) -> i32 {
+        let mut offset_dest = &mut self.scratch_space[0..HALF_LEN];
+        offset_dest.copy_from_slice(&operands.offset[..]);
+        offset_dest.into_i64() as i32
+    }
+
+    fn get_memory_offset(&mut self, operands: &operands::Memory) -> i32 {
         let mut offset_dest = &mut self.scratch_space[0..HALF_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
         offset_dest.into_i64() as i32
