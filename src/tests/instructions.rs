@@ -259,12 +259,12 @@ fn instruction_from_word() {
         instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "101T")).unwrap()
     );
     assert_eq!(
-        Instruction::Jmp(operands::Jump { offset: TRYTE4_1073741808 }),
-        instruction_from_trit_str(concat!("010T10T11110T1T0TT01", "1010")).unwrap()
+        Instruction::Jmp(operands::Jump { offset: TRYTE4_1073741824 }),
+        instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1010")).unwrap()
     );
     assert_eq!(
-        Instruction::Call(operands::Jump { offset: TRYTE4_1073741808 }),
-        instruction_from_trit_str(concat!("010T10T11110T1T0TT01", "1011")).unwrap()
+        Instruction::Call(operands::Jump { offset: TRYTE4_1073741824 }),
+        instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1011")).unwrap()
     );
     assert_eq!(
         Instruction::Jmpr(operands::R { src: registers::T0 }),

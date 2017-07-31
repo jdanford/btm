@@ -253,10 +253,10 @@ fn addr_from_word(word: &[Tryte]) -> [Tryte; WORD_LEN] {
     let trits_2 = word[2].0;
     let trits_3 = word[3].0;
 
-    let addr_trits_0 = (trits_0 >> 6 | trits_1 << 6) & tryte::BITMASK & !trit::BITMASK;
-    let addr_trits_1 = (trits_1 >> 6 | trits_2 << 6) & tryte::BITMASK;
-    let addr_trits_2 = (trits_2 >> 6 | trits_3 << 6) & tryte::BITMASK;
-    let addr_trits_3 = (trits_3 >> 6) & tryte::BITMASK;
+    let addr_trits_0 = (trits_0 >> 8 | trits_1 << 4) & tryte::BITMASK;
+    let addr_trits_1 = (trits_1 >> 8 | trits_2 << 4) & tryte::BITMASK;
+    let addr_trits_2 = (trits_2 >> 8 | trits_3 << 4) & tryte::BITMASK;
+    let addr_trits_3 = (trits_3 >> 8) & tryte::BITMASK;
 
     [
         Tryte(addr_trits_0),
