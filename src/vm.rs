@@ -437,10 +437,16 @@ impl<'a> VM<'a> {
     fn do_load(&mut self, operands: &operands::Memory, len: usize) {
         let i = self.get_memory_addr(operands);
         let j = i + len;
-
         let src = &self.memory[i..j];
-        let dest = &mut self.registers[operands.dest][..len];
-        dest.copy_from_slice(src);
+
+        {
+            let dest_reg = &mut self.registers[operands.dest];
+            dest_reg.clear();
+            let mut dest = &mut dest_reg[..len];
+            dest.copy_from_slice(src);
+        }
+
+        self.registers[registers::ZERO].clear();
     }
 
     fn do_store(&mut self, operands: &operands::Memory, len: usize) {
