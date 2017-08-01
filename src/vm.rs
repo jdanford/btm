@@ -123,7 +123,7 @@ impl<'a> VM<'a> {
         };
 
         self.registers[operands.dest].clear();
-        self.registers[registers::HI].set_trit(0, cmp_trit);
+        self.registers[operands.dest].set_trit(0, cmp_trit);
         self.registers[registers::ZERO].clear();
         Ok(())
     }
