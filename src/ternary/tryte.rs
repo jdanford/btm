@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 use std::fmt;
+use std::io;
 use std::ops;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -114,7 +115,7 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn write_hytes<W: fmt::Write>(&self, writer: &mut W) -> fmt::Result {
+    pub fn write_hytes<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = char_from_hyte(low_hyte);
         let high_char = char_from_hyte(high_hyte);
@@ -158,6 +159,9 @@ impl fmt::Debug for Tryte {
 
 impl fmt::Display for Tryte {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.write_hytes(f)
+        let (low_hyte, high_hyte) = self.hytes();
+        let low_char = char_from_hyte(low_hyte);
+        let high_char = char_from_hyte(high_hyte);
+        write!(f, "{}{}", high_char, low_char)
     }
 }

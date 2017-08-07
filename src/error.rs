@@ -4,7 +4,6 @@ use ternary;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {
-    InvalidEncoding(String),
     InvalidOpcode(u8),
     InvalidRegister(u8),
     TernaryError(ternary::Error),

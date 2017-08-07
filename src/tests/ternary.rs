@@ -83,9 +83,9 @@ fn ternary_display_hytes() {
 }
 
 fn get_hyte_str(trytes: &[Tryte]) -> String {
-    let mut s = String::new();
-    trytes.write_hytes(&mut s).unwrap();
-    s
+    let mut bytes = Vec::new();
+    trytes.write_hytes(&mut bytes).unwrap();
+    String::from_utf8_lossy(&bytes).into_owned()
 }
 
 #[test]
@@ -126,9 +126,9 @@ fn ternary_display_trits() {
 }
 
 fn get_trit_str(trytes: &[Tryte]) -> String {
-    let mut s = String::new();
-    trytes.write_trits(&mut s).unwrap();
-    s
+    let mut bytes = Vec::new();
+    trytes.write_trits(&mut bytes).unwrap();
+    String::from_utf8_lossy(&bytes).into_owned()
 }
 
 #[test]

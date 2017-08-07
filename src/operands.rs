@@ -1,6 +1,7 @@
 use error::{Error, Result};
+use ternary;
 use ternary::constants::*;
-use ternary::{Ternary, trit, Trit, tryte, Tryte};
+use ternary::{Ternary, Trit, tryte, Tryte};
 use registers::*;
 
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;
@@ -19,9 +20,10 @@ impl Operand for Empty {
         {
             Ok(Empty)
         } else {
-            let mut s = String::new();
-            word.write_trits(&mut s)?;
-            Err(Error::InvalidEncoding(s))
+            let mut bytes = Vec::new();
+            word.write_trits(&mut bytes)?;
+            let s = String::from_utf8_lossy(&bytes).into_owned();
+            Err(Error::TernaryError(ternary::Error::InvalidEncoding(s)))
         }
     }
 }

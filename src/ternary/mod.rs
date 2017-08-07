@@ -4,9 +4,10 @@ pub mod tables;
 pub mod trit;
 mod hyte;
 pub mod tryte;
+pub mod text;
 
 use std::convert::TryFrom;
-use std::fmt;
+use std::io;
 use std::ops::{BitAnd, BitOr, Mul, Neg};
 
 use byteorder::{ReadBytesExt, WriteBytesExt};
@@ -120,7 +121,7 @@ pub trait Ternary {
         Ok(())
     }
 
-    fn write_hytes<W: fmt::Write>(&self, writer: &mut W) -> Result<()> {
+    fn write_hytes<W: io::Write>(&self, writer: &mut W) -> Result<()> {
         for i in (0..self.tryte_len()).rev() {
             let tryte = self.get_tryte(i);
             tryte.write_hytes(writer)?;
@@ -142,7 +143,7 @@ pub trait Ternary {
         Ok(())
     }
 
-    fn write_trits<W: fmt::Write>(&self, writer: &mut W) -> Result<()> {
+    fn write_trits<W: io::Write>(&self, writer: &mut W) -> Result<()> {
         for i in (0..self.trit_len()).rev() {
             let trit = self.get_trit(i);
             let c: char = trit.into();
