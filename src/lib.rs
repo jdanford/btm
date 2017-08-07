@@ -14,5 +14,3 @@ mod opcodes;
 mod operands;
 mod instructions;
 mod vm;
-#[cfg(test)]
-mod tests;

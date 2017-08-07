@@ -51,3 +51,51 @@ impl Opcode {
         Ok(Opcode(i))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn opcode_from_trit4() {
+        assert_eq!(Ok(AND), Opcode::from_trit4(0b00_00_00_00));
+        assert_eq!(Ok(OR), Opcode::from_trit4(0b00_00_00_01));
+        assert_eq!(Ok(TMUL), Opcode::from_trit4(0b00_00_01_11));
+        assert_eq!(Ok(TCMP), Opcode::from_trit4(0b00_00_01_00));
+        assert_eq!(Ok(CMP), Opcode::from_trit4(0b00_00_01_01));
+        assert_eq!(Ok(SHF), Opcode::from_trit4(0b00_01_11_11));
+        assert_eq!(Ok(ADD), Opcode::from_trit4(0b00_01_11_00));
+        assert_eq!(Ok(MUL), Opcode::from_trit4(0b00_01_11_01));
+        assert_eq!(Ok(DIV), Opcode::from_trit4(0b00_01_00_11));
+        assert_eq!(Ok(ANDI), Opcode::from_trit4(0b00_01_00_00));
+        assert_eq!(Ok(ORI), Opcode::from_trit4(0b00_01_00_01));
+        assert_eq!(Ok(TMULI), Opcode::from_trit4(0b00_01_01_11));
+        assert_eq!(Ok(TCMPI), Opcode::from_trit4(0b00_01_01_00));
+        assert_eq!(Ok(SHFI), Opcode::from_trit4(0b00_01_01_01));
+        assert_eq!(Ok(ADDI), Opcode::from_trit4(0b01_11_11_11));
+        assert_eq!(Ok(LUI), Opcode::from_trit4(0b01_11_11_00));
+        assert_eq!(Ok(LSR), Opcode::from_trit4(0b01_11_11_01));
+        assert_eq!(Ok(SSR), Opcode::from_trit4(0b01_11_00_11));
+        assert_eq!(Ok(LT), Opcode::from_trit4(0b01_11_00_00));
+        assert_eq!(Ok(LH), Opcode::from_trit4(0b01_11_00_01));
+        assert_eq!(Ok(LW), Opcode::from_trit4(0b01_11_01_11));
+        assert_eq!(Ok(ST), Opcode::from_trit4(0b01_11_01_00));
+        assert_eq!(Ok(SH), Opcode::from_trit4(0b01_11_01_01));
+        assert_eq!(Ok(SW), Opcode::from_trit4(0b01_00_11_11));
+        assert_eq!(Ok(BT), Opcode::from_trit4(0b01_00_11_00));
+        assert_eq!(Ok(B0), Opcode::from_trit4(0b01_00_11_01));
+        assert_eq!(Ok(B1), Opcode::from_trit4(0b01_00_00_11));
+        assert_eq!(Ok(BT0), Opcode::from_trit4(0b01_00_00_00));
+        assert_eq!(Ok(BT1), Opcode::from_trit4(0b01_00_00_01));
+        assert_eq!(Ok(B01), Opcode::from_trit4(0b01_00_01_11));
+        assert_eq!(Ok(JMP), Opcode::from_trit4(0b01_00_01_00));
+        assert_eq!(Ok(CALL), Opcode::from_trit4(0b01_00_01_01));
+        assert_eq!(Ok(JMPR), Opcode::from_trit4(0b01_01_11_11));
+        assert_eq!(Ok(CALLR), Opcode::from_trit4(0b01_01_11_00));
+        assert_eq!(Ok(SYSCALL), Opcode::from_trit4(0b01_01_11_01));
+        assert_eq!(Ok(BREAK), Opcode::from_trit4(0b01_01_00_11));
+
+        assert!(Opcode::from_trit4(0b00_00_00_11).is_err());
+        assert!(Opcode::from_trit4(0b01_01_00_00).is_err());
+    }
+}

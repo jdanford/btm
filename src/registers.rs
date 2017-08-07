@@ -115,3 +115,50 @@ impl<R: Register> IndexMut<R> for RegisterFile {
         &mut self.registers[i..j]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn standard_register_from_trit4() {
+        assert_eq!(Ok(ZERO), StandardRegister::from_trit4(0b00_00_00_00));
+        assert_eq!(Ok(LO), StandardRegister::from_trit4(0b00_00_00_01));
+        assert_eq!(Ok(HI), StandardRegister::from_trit4(0b00_00_01_11));
+        assert_eq!(Ok(SP), StandardRegister::from_trit4(0b00_00_01_00));
+        assert_eq!(Ok(FP), StandardRegister::from_trit4(0b00_00_01_01));
+        assert_eq!(Ok(RA), StandardRegister::from_trit4(0b00_01_11_11));
+        assert_eq!(Ok(A0), StandardRegister::from_trit4(0b00_01_11_00));
+        assert_eq!(Ok(A1), StandardRegister::from_trit4(0b00_01_11_01));
+        assert_eq!(Ok(A2), StandardRegister::from_trit4(0b00_01_00_11));
+        assert_eq!(Ok(A3), StandardRegister::from_trit4(0b00_01_00_00));
+        assert_eq!(Ok(A4), StandardRegister::from_trit4(0b00_01_00_01));
+        assert_eq!(Ok(A5), StandardRegister::from_trit4(0b00_01_01_11));
+        assert_eq!(Ok(S0), StandardRegister::from_trit4(0b00_01_01_00));
+        assert_eq!(Ok(S1), StandardRegister::from_trit4(0b00_01_01_01));
+        assert_eq!(Ok(S2), StandardRegister::from_trit4(0b01_11_11_11));
+        assert_eq!(Ok(S3), StandardRegister::from_trit4(0b01_11_11_00));
+        assert_eq!(Ok(S4), StandardRegister::from_trit4(0b01_11_11_01));
+        assert_eq!(Ok(S5), StandardRegister::from_trit4(0b01_11_00_11));
+        assert_eq!(Ok(T0), StandardRegister::from_trit4(0b01_11_00_00));
+        assert_eq!(Ok(T1), StandardRegister::from_trit4(0b01_11_00_01));
+        assert_eq!(Ok(T2), StandardRegister::from_trit4(0b01_11_01_11));
+        assert_eq!(Ok(T3), StandardRegister::from_trit4(0b01_11_01_00));
+        assert_eq!(Ok(T4), StandardRegister::from_trit4(0b01_11_01_01));
+        assert_eq!(Ok(T5), StandardRegister::from_trit4(0b01_00_11_11));
+
+        assert!(StandardRegister::from_trit4(0b00_00_00_11).is_err());
+        assert!(StandardRegister::from_trit4(0b01_00_11_00).is_err());
+    }
+
+    #[test]
+    fn system_register_from_trit4() {
+        assert_eq!(Ok(EHA), SystemRegister::from_trit4(0b00_00_00_00));
+        assert_eq!(Ok(ERA), SystemRegister::from_trit4(0b00_00_00_01));
+        assert_eq!(Ok(EC), SystemRegister::from_trit4(0b00_00_01_11));
+        assert_eq!(Ok(ED), SystemRegister::from_trit4(0b00_00_01_00));
+
+        assert!(SystemRegister::from_trit4(0b00_00_00_11).is_err());
+        assert!(SystemRegister::from_trit4(0b00_00_01_01).is_err());
+    }
+}

@@ -1,4 +1,4 @@
-use ternary::Tryte;
+use super::Tryte;
 
 pub const TRYTE_MIN: Tryte = Tryte(0b11_11_11_11_11_11);
 pub const TRYTE_NEG317: Tryte = Tryte(0b11_01_00_01_11_01);
