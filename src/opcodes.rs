@@ -1,5 +1,5 @@
-use error::{Error, Result};
 use ternary::tables::TRIT4_TO_I8;
+use error::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Opcode(u8);

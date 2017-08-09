@@ -1,9 +1,9 @@
 use std::ops::{Index, IndexMut};
 
-use error::{Error, Result};
 use ternary::constants::*;
 use ternary::tables::TRIT4_TO_I8;
 use ternary::{tryte, Tryte};
+use error::{Error, Result};
 
 pub trait Register: Sized {
     const COUNT: usize;
@@ -95,8 +95,14 @@ pub struct RegisterFile {
 }
 
 impl RegisterFile {
-    pub fn new() -> RegisterFile {
+    pub fn new() -> Self {
         RegisterFile { registers: [tryte::ZERO; TOTAL_LEN] }
+    }
+}
+
+impl Default for RegisterFile {
+    fn default() -> Self {
+        RegisterFile::new()
     }
 }
 

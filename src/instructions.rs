@@ -1,5 +1,5 @@
-use error::Result;
 use ternary::Tryte;
+use error::Result;
 use opcodes;
 use opcodes::Opcode;
 use operands;

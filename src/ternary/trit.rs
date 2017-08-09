@@ -47,8 +47,8 @@ impl Trit {
         Trit(bits)
     }
 
-    pub fn add_with_carry(self, rhs: Trit, carry: Trit) -> (Trit, Trit) {
-        let i = trit3_index(self, rhs, carry);
+    pub fn add_with_carry(self, rhs: Trit, carry_in: Trit) -> (Trit, Trit) {
+        let i = trit3_index(self, rhs, carry_in);
         let (sum, carry) = TRIT3_TO_SUM_AND_CARRY[i];
         (Trit(sum), Trit(carry))
     }

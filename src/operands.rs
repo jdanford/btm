@@ -1,7 +1,7 @@
-use error::{Error, Result};
 use ternary;
 use ternary::constants::*;
 use ternary::{Ternary, Trit, tryte, Tryte};
+use error::{Error, Result};
 use registers::*;
 
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;

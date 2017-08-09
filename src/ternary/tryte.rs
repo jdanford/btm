@@ -9,7 +9,7 @@ use super::constants::*;
 use super::error::{Error, Result};
 use super::trit;
 use super::trit::Trit;
-use super::hyte::{char_from_hyte, try_hyte_from_char};
+use super::hyte;
 
 pub use super::constants::TRYTE_TRIT_LEN as TRIT_LEN;
 
@@ -89,9 +89,9 @@ impl Tryte {
         for i in 0..TRIT_LEN {
             let a = self.get_trit(i);
             let b = rhs.get_trit(i);
-            let (c, _carry) = a.add_with_carry(b, carry);
+            let (c, new_carry) = a.add_with_carry(b, carry);
             tryte = tryte.set_trit(i, c);
-            carry = _carry;
+            carry = new_carry;
         }
 
         (tryte, carry)
@@ -109,16 +109,16 @@ impl Tryte {
         let low_char = chars.next().ok_or_else(
             || Error::InvalidString(s.to_owned()),
         )?;
-        let high_hyte = try_hyte_from_char(high_char)?;
-        let low_hyte = try_hyte_from_char(low_char)?;
+        let high_hyte = hyte::try_from_char(high_char)?;
+        let low_hyte = hyte::try_from_char(low_char)?;
         let tryte = Tryte::from_hytes(low_hyte, high_hyte);
         Ok(tryte)
     }
 
     pub fn write_hytes<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         let (low_hyte, high_hyte) = self.hytes();
-        let low_char = char_from_hyte(low_hyte);
-        let high_char = char_from_hyte(high_hyte);
+        let low_char = hyte::into_char(low_hyte);
+        let high_char = hyte::into_char(high_hyte);
         write!(writer, "{}{}", high_char, low_char)
     }
 }
@@ -160,8 +160,8 @@ impl fmt::Debug for Tryte {
 impl fmt::Display for Tryte {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (low_hyte, high_hyte) = self.hytes();
-        let low_char = char_from_hyte(low_hyte);
-        let high_char = char_from_hyte(high_hyte);
+        let low_char = hyte::into_char(low_hyte);
+        let high_char = hyte::into_char(high_hyte);
         write!(f, "{}{}", high_char, low_char)
     }
 }

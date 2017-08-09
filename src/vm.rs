@@ -1,8 +1,8 @@
-use error::Result;
 use ternary;
 use ternary::constants::*;
 use ternary::tables::TRIT4_TO_I8;
 use ternary::{Ternary, trit, Trit, tryte, Tryte};
+use error::Result;
 use registers;
 use registers::{StandardRegister, RegisterFile};
 use operands;
@@ -22,7 +22,7 @@ pub struct VM<'a> {
 }
 
 impl<'a> VM<'a> {
-    pub fn new(memory: &'a mut [Tryte]) -> VM<'a> {
+    pub fn new(memory: &'a mut [Tryte]) -> Self {
         VM {
             running: false,
             pc: 0,

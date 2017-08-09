@@ -191,7 +191,7 @@ pub fn decode_char(src: &[Tryte]) -> Result<(char, usize)> {
 
 pub fn invalid_encoding_from_trytes(src: &[Tryte]) -> Error {
     let mut bytes = Vec::new();
-    src.write_trits(&mut bytes).unwrap();
+    src.write_trits(&mut bytes).expect("error writing trits");
     let s = String::from_utf8_lossy(&bytes).into_owned();
     Error::InvalidEncoding(s)
 }
@@ -207,7 +207,6 @@ fn unshift_codepoint(shifted_codepoint: i32, offset: isize) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::test_constants::*;
 
     #[test]
     fn text_encode_decode() {

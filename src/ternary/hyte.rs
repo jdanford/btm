@@ -34,7 +34,7 @@ static CHAR_TO_HYTE: phf::Map<char, u8> =
     'M' => 0b01_01_01,
 };
 
-pub fn try_hyte_from_char(c: char) -> Result<u8> {
+pub fn try_from_char(c: char) -> Result<u8> {
     CHAR_TO_HYTE.get(&c).cloned().ok_or_else(
         || Error::InvalidCharacter(c),
     )
@@ -76,7 +76,7 @@ lazy_static! {
     };
 }
 
-pub fn char_from_hyte(hyte: u8) -> char {
+pub fn into_char(hyte: u8) -> char {
     let i = hyte as usize;
     HYTE_TO_CHAR[i]
 }

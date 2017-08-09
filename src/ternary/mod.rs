@@ -26,7 +26,7 @@ pub trait Ternary {
     fn set_tryte(&mut self, usize, tryte: Tryte);
 
     fn range(&self) -> i64 {
-        let base = 3i64;
+        let base = 3_i64;
         let exp = self.trit_len() as u32;
         base.pow(exp)
     }
@@ -64,7 +64,7 @@ pub trait Ternary {
     }
 
     fn into_i64(&self) -> i64 {
-        let mut n = 0i64;
+        let mut n = 0_i64;
 
         for i in (0..self.trit_len()).rev() {
             let trit = self.get_trit(i);
@@ -85,36 +85,35 @@ pub trait Ternary {
         }
 
         let sign_trit = if n < 0 { trit::NEG } else { trit::POS };
-        let mut n = n.abs();
+        let mut n_pos = n.abs();
 
         for i in 0..self.trit_len() {
-            let rem_trit = match n % 3 {
+            let rem_trit = match n_pos % 3 {
                 1 => trit::POS,
                 0 => trit::ZERO,
                 _ => {
-                    n += 1;
+                    n_pos += 1;
                     trit::NEG
                 }
             };
 
             let trit = sign_trit * rem_trit;
             self.set_trit(i, trit);
-            n /= 3;
+            n_pos /= 3;
         }
 
         Ok(())
     }
 
-    fn read_hytes(&mut self, s: &str) -> Result<()> {
+    fn read_hytes(&mut self, mut s: &str) -> Result<()> {
         let len = self.tryte_len() * 2;
         if s.len() != len {
             return Err(Error::InvalidDataLength(len, s.len()));
         }
 
-        let mut s = s;
         for i in (0..self.tryte_len()).rev() {
-            let (substr, _s) = s.split_at(2);
-            s = _s;
+            let (substr, s_rest) = s.split_at(2);
+            s = s_rest;
             let tryte = Tryte::from_hyte_str(substr)?;
             self.set_tryte(i, tryte);
         }
@@ -209,8 +208,8 @@ pub fn add<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T, carry: Trit) -> 
     for i in 0..lhs.trit_len() {
         let a = lhs.get_trit(i);
         let b = rhs.get_trit(i);
-        let (c, _carry) = a.add_with_carry(b, carry);
-        carry = _carry;
+        let (c, new_carry) = a.add_with_carry(b, carry);
+        carry = new_carry;
         dest.set_trit(i, c);
     }
 
@@ -232,8 +231,8 @@ fn add_mul<T: Ternary + ?Sized>(dest: &mut T, src: &T, sign: Trit, offset: usize
     for i in 0..src.trit_len() {
         let a = dest.get_trit(i + offset);
         let b = src.get_trit(i);
-        let (c, _carry) = a.add_with_carry(b * sign, carry);
-        carry = _carry;
+        let (c, new_carry) = a.add_with_carry(b * sign, carry);
+        carry = new_carry;
         dest.set_trit(i + offset, c);
     }
 
