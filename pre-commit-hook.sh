@@ -21,12 +21,12 @@ fi
 
 exec 1>&2
 
-cargo clippy
-CLIPPY_EXIT_CODE=$?
+# cargo clippy
+# CLIPPY_EXIT_CODE=$?
 
-if [[ $CLIPPY_EXIT_CODE != 0 ]]; then
-    exit $CLIPPY_EXIT_CODE
-fi
+# if [[ $CLIPPY_EXIT_CODE != 0 ]]; then
+#     exit $CLIPPY_EXIT_CODE
+# fi
 
 echo $RS_FILES | xargs -L 1 rustup run nightly rustfmt --write-mode overwrite
 echo $RS_FILES | xargs -L 1 git add
