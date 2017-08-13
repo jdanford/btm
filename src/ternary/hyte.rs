@@ -3,8 +3,7 @@ use phf;
 use super::trit::CHAR_INVALID;
 use super::error::{Error, Result};
 
-static CHAR_TO_HYTE: phf::Map<char, u8> =
-    phf_map! {
+static CHAR_TO_HYTE: phf::Map<char, u8> = phf_map! {
     'm' => 0b11_11_11,
     'l' => 0b11_11_00,
     'k' => 0b11_11_01,
@@ -35,9 +34,10 @@ static CHAR_TO_HYTE: phf::Map<char, u8> =
 };
 
 pub fn try_from_char(c: char) -> Result<u8> {
-    CHAR_TO_HYTE.get(&c).cloned().ok_or_else(
-        || Error::InvalidCharacter(c),
-    )
+    CHAR_TO_HYTE
+        .get(&c)
+        .cloned()
+        .ok_or_else(|| Error::InvalidCharacter(c))
 }
 
 lazy_static! {

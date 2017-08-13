@@ -103,12 +103,12 @@ impl Tryte {
         }
 
         let mut chars = s.chars();
-        let high_char = chars.next().ok_or_else(
-            || Error::InvalidString(s.to_owned()),
-        )?;
-        let low_char = chars.next().ok_or_else(
-            || Error::InvalidString(s.to_owned()),
-        )?;
+        let high_char = chars
+            .next()
+            .ok_or_else(|| Error::InvalidString(s.to_owned()))?;
+        let low_char = chars
+            .next()
+            .ok_or_else(|| Error::InvalidString(s.to_owned()))?;
         let high_hyte = hyte::try_from_char(high_char)?;
         let low_hyte = hyte::try_from_char(low_char)?;
         let tryte = Tryte::from_hytes(low_hyte, high_hyte);

@@ -1,6 +1,6 @@
 use ternary;
 use ternary::constants::*;
-use ternary::{Ternary, Trit, tryte, Tryte};
+use ternary::{tryte, Ternary, Trit, Tryte};
 use error::{Error, Result};
 use registers::*;
 

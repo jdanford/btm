@@ -1,10 +1,10 @@
 use ternary;
 use ternary::constants::*;
 use ternary::tables::TRIT4_TO_I8;
-use ternary::{Ternary, trit, Trit, tryte, Tryte};
+use ternary::{trit, tryte, Ternary, Trit, Tryte};
 use error::Result;
 use registers;
-use registers::{StandardRegister, RegisterFile};
+use registers::{RegisterFile, StandardRegister};
 use operands;
 use instructions::Instruction;
 

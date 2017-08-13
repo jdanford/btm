@@ -95,8 +95,8 @@ pub fn encode_char(dest: &mut [Tryte], c: char) -> Result<usize> {
             let double_start_trits = DOUBLE_START_PATTERN | (src_0 & DOUBLE_START_BITMASK);
             dest[0] = Tryte(double_start_trits);
 
-            let continuation_trits = CONTINUATION_PATTERN |
-                (src_0 >> 8 | src_1 << 4 & CONTINUATION_BITMASK);
+            let continuation_trits =
+                CONTINUATION_PATTERN | (src_0 >> 8 | src_1 << 4 & CONTINUATION_BITMASK);
             dest[1] = Tryte(continuation_trits);
         }
 
@@ -108,12 +108,12 @@ pub fn encode_char(dest: &mut [Tryte], c: char) -> Result<usize> {
             let triple_start_trits = TRIPLE_START_PATTERN | (src_0 & TRIPLE_START_BITMASK);
             dest[0] = Tryte(triple_start_trits);
 
-            let continuation1_trits = CONTINUATION_PATTERN |
-                (src_0 >> 6 | src_1 << 6 & CONTINUATION_BITMASK);
+            let continuation1_trits =
+                CONTINUATION_PATTERN | (src_0 >> 6 | src_1 << 6 & CONTINUATION_BITMASK);
             dest[1] = Tryte(continuation1_trits);
 
-            let continuation2_trits = CONTINUATION_PATTERN |
-                (src_1 >> 4 | src_2 << 8 & CONTINUATION_BITMASK);
+            let continuation2_trits =
+                CONTINUATION_PATTERN | (src_1 >> 4 | src_2 << 8 & CONTINUATION_BITMASK);
             dest[2] = Tryte(continuation2_trits);
         }
 
@@ -167,8 +167,8 @@ pub fn decode_char(src: &[Tryte]) -> Result<(char, usize)> {
             let dest0_trits = triple_start_trits | (continuation1_trits << 6 & tryte::BITMASK);
             dest[0] = Tryte(dest0_trits);
 
-            let dest1_trits = continuation1_trits >> 6 |
-                (continuation2_trits << 4 & tryte::BITMASK);
+            let dest1_trits =
+                continuation1_trits >> 6 | (continuation2_trits << 4 & tryte::BITMASK);
             dest[1] = Tryte(dest1_trits);
 
             let dest2_trits = continuation2_trits >> 8;
@@ -182,9 +182,8 @@ pub fn decode_char(src: &[Tryte]) -> Result<(char, usize)> {
 
     let shifted_codepoint = dest.into_i64() as i32;
     let codepoint = unshift_codepoint(shifted_codepoint, codepoint_offset);
-    let c = char::from_u32(codepoint).ok_or_else(|| {
-        invalid_encoding_from_trytes(src)
-    })?;
+    let c = char::from_u32(codepoint)
+        .ok_or_else(|| invalid_encoding_from_trytes(src))?;
 
     Ok((c, len))
 }

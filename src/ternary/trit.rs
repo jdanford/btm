@@ -98,8 +98,7 @@ impl Into<char> for Trit {
     }
 }
 
-static CHAR_TO_TRIT: phf::Map<char, u16> =
-    phf_map! {
+static CHAR_TO_TRIT: phf::Map<char, u16> = phf_map! {
     'T' => BIN_NEG,
     '0' => BIN_ZERO,
     '1' => BIN_POS,

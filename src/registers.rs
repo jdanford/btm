@@ -96,7 +96,9 @@ pub struct RegisterFile {
 
 impl RegisterFile {
     pub fn new() -> Self {
-        RegisterFile { registers: [tryte::ZERO; TOTAL_LEN] }
+        RegisterFile {
+            registers: [tryte::ZERO; TOTAL_LEN],
+        }
     }
 }
 
