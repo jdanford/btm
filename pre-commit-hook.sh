@@ -12,7 +12,6 @@ rust_files() {
     git diff --cached --name-only --diff-filter=AM -z $against | tr '\0' '\n' | grep "\.rs$"
 }
 
-RS_FILES=`rust_files`
 if [[ -z `rust_files` ]]; then
     exit
 fi
@@ -28,6 +27,7 @@ exec 1>&2
 #     exit $CLIPPY_EXIT_CODE
 # fi
 
+RS_FILES=`rust_files`
 echo $RS_FILES | xargs -L 1 rustup run nightly rustfmt --write-mode overwrite
 echo $RS_FILES | xargs -L 1 git add
 
