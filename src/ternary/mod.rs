@@ -108,7 +108,7 @@ pub trait Ternary {
     fn read_hytes(&mut self, mut s: &str) -> Result<()> {
         let len = self.tryte_len() * 2;
         if s.len() != len {
-            return Err(Error::InvalidDataLength(len, s.len()));
+            return Err(Error::InvalidLength(len, s.len()));
         }
 
         for i in (0..self.tryte_len()).rev() {
@@ -132,7 +132,7 @@ pub trait Ternary {
 
     fn read_trits(&mut self, s: &str) -> Result<()> {
         if s.len() != self.trit_len() {
-            return Err(Error::InvalidDataLength(self.trit_len(), s.len()));
+            return Err(Error::InvalidLength(self.trit_len(), s.len()));
         }
 
         for (i, c) in s.chars().rev().enumerate() {
@@ -192,7 +192,7 @@ pub fn tmul<T: Ternary + ?Sized>(dest: &mut T, lhs: &T, rhs: &T) {
 
 fn read_trits<T: Ternary + ?Sized>(dest: &mut T, trits: &[Trit]) -> Result<()> {
     if trits.len() != dest.trit_len() {
-        return Err(Error::InvalidDataLength(dest.trit_len(), trits.len()));
+        return Err(Error::InvalidLength(dest.trit_len(), trits.len()));
     }
 
     for (i, &trit) in trits.iter().enumerate() {

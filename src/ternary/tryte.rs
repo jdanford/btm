@@ -99,7 +99,7 @@ impl Tryte {
 
     pub fn from_hyte_str(s: &str) -> Result<Tryte> {
         if s.len() != 2 {
-            return Err(Error::InvalidDataLength(2, s.len()));
+            return Err(Error::InvalidLength(2, s.len()));
         }
 
         let mut chars = s.chars();
