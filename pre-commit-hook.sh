@@ -9,10 +9,11 @@ else
 fi
 
 rust_files() {
-    git diff --cached --name-only --diff-filter=AM -z $against | tr '\0' '\n' | grep "\.rs$"
+    git diff --cached --name-only --diff-filter=AM -z $against | tr "\0" "\n" | grep "\.rs$"
 }
 
-if [[ -z `rust_files` ]]; then
+RS_FILES=`rust_files`
+if [[ -z $RS_FILES ]]; then
     exit
 fi
 
@@ -20,14 +21,7 @@ fi
 
 exec 1>&2
 
-# cargo clippy
-# CLIPPY_EXIT_CODE=$?
-
-# if [[ $CLIPPY_EXIT_CODE != 0 ]]; then
-#     exit $CLIPPY_EXIT_CODE
-# fi
-
-RS_FILES=`rust_files`
+cargo clippy || exit $?
 echo $RS_FILES | xargs -L 1 rustup run nightly rustfmt --write-mode overwrite
 echo $RS_FILES | xargs -L 1 git add
 
