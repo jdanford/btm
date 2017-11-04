@@ -9,7 +9,6 @@ use operands;
 use instructions::Instruction;
 
 const SCRATCH_SPACE_LEN: usize = WORD_LEN * 4;
-
 const TRIT3_POS_OFFSET: i8 = 13;
 
 pub struct VM<'a> {
@@ -84,6 +83,8 @@ impl<'a> VM<'a> {
             Instruction::Syscall => self.op_syscall(),
             Instruction::Break => self.op_break(),
         }
+
+        Ok(())
     }
 
     fn next_instruction(&mut self) -> Result<Instruction> {
@@ -95,27 +96,23 @@ impl<'a> VM<'a> {
         Instruction::from_word(word)
     }
 
-    fn op_and(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_and(&mut self, operands: &operands::RRR) {
         self.do_simple_rrr(operands, ternary::and);
-        Ok(())
     }
 
-    fn op_or(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_or(&mut self, operands: &operands::RRR) {
         self.do_simple_rrr(operands, ternary::or);
-        Ok(())
     }
 
-    fn op_tmul(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_tmul(&mut self, operands: &operands::RRR) {
         self.do_simple_rrr(operands, ternary::tmul);
-        Ok(())
     }
 
-    fn op_tcmp(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_tcmp(&mut self, operands: &operands::RRR) {
         self.do_simple_rrr(operands, ternary::tcmp);
-        Ok(())
     }
 
-    fn op_cmp(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_cmp(&mut self, operands: &operands::RRR) {
         let cmp_trit = {
             let lhs = &self.registers[operands.lhs];
             let rhs = &self.registers[operands.rhs];
@@ -125,17 +122,15 @@ impl<'a> VM<'a> {
         self.registers[operands.dest].clear();
         self.registers[operands.dest].set_trit(0, cmp_trit);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn op_shf(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_shf(&mut self, operands: &operands::RRR) {
         let offset = (&self.registers[operands.rhs]).into_i64() as isize;
         self.do_shift(operands.lhs, offset);
         self.copy_shift_result(operands.dest);
-        Ok(())
     }
 
-    fn op_add(&mut self, operands: &operands::RRR) -> Result<()> {
+    fn op_add(&mut self, operands: &operands::RRR) {
         let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
         let carry = {
             let lhs = &self.registers[operands.lhs];
@@ -147,10 +142,9 @@ impl<'a> VM<'a> {
         self.registers[registers::HI].clear();
         self.registers[registers::HI].set_trit(0, carry);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn op_mul(&mut self, operands: &operands::RR) -> Result<()> {
+    fn op_mul(&mut self, operands: &operands::RR) {
         let i = WORD_LEN;
         let j = WORD_LEN * 2;
 
@@ -164,41 +158,35 @@ impl<'a> VM<'a> {
 
         self.registers[registers::LO].copy_from_slice(&tmp_dest[0..i]);
         self.registers[registers::HI].copy_from_slice(&tmp_dest[i..j]);
-        Ok(())
     }
 
-    fn op_div(&mut self, operands: &operands::RR) -> Result<()> {
+    fn op_div(&mut self, operands: &operands::RR) {
         unimplemented!()
     }
 
-    fn op_andi(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_andi(&mut self, operands: &operands::RRI) {
         self.do_simple_rri(operands, ternary::and);
-        Ok(())
     }
 
-    fn op_ori(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_ori(&mut self, operands: &operands::RRI) {
         self.do_simple_rri(operands, ternary::or);
-        Ok(())
     }
 
-    fn op_tmuli(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_tmuli(&mut self, operands: &operands::RRI) {
         self.do_simple_rri(operands, ternary::tmul);
-        Ok(())
     }
 
-    fn op_tcmpi(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_tcmpi(&mut self, operands: &operands::RRI) {
         self.do_simple_rri(operands, ternary::tcmp);
-        Ok(())
     }
 
-    fn op_shfi(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_shfi(&mut self, operands: &operands::RRI) {
         let offset = operands.immediate.into_i64() as isize;
         self.do_shift(operands.src, offset);
         self.copy_shift_result(operands.dest);
-        Ok(())
     }
 
-    fn op_addi(&mut self, operands: &operands::RRI) -> Result<()> {
+    fn op_addi(&mut self, operands: &operands::RRI) {
         let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
         let carry = {
             let lhs = &self.registers[operands.src];
@@ -210,10 +198,9 @@ impl<'a> VM<'a> {
         self.registers[registers::HI].clear();
         self.registers[registers::HI].set_trit(0, carry);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn op_lui(&mut self, operands: &operands::RI) -> Result<()> {
+    fn op_lui(&mut self, operands: &operands::RI) {
         {
             let i = WORD_LEN;
             let j = WORD_LEN * 2;
@@ -222,10 +209,9 @@ impl<'a> VM<'a> {
         }
 
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn op_lsr(&mut self, operands: &operands::LoadSystem) -> Result<()> {
+    fn op_lsr(&mut self, operands: &operands::LoadSystem) {
         let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
 
         {
@@ -235,10 +221,9 @@ impl<'a> VM<'a> {
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
         self.registers[registers::ZERO].clear();
-        Ok(())
     }
 
-    fn op_ssr(&mut self, operands: &operands::StoreSystem) -> Result<()> {
+    fn op_ssr(&mut self, operands: &operands::StoreSystem) {
         let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
 
         {
@@ -247,112 +232,95 @@ impl<'a> VM<'a> {
         }
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
-        Ok(())
     }
 
-    fn op_lt(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_lt(&mut self, operands: &operands::Memory) {
         self.do_load(operands, TRYTE_LEN);
-        Ok(())
     }
 
-    fn op_lh(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_lh(&mut self, operands: &operands::Memory) {
         self.do_load(operands, HALF_LEN);
-        Ok(())
     }
 
-    fn op_lw(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_lw(&mut self, operands: &operands::Memory) {
         self.do_load(operands, WORD_LEN);
-        Ok(())
     }
 
-    fn op_st(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_st(&mut self, operands: &operands::Memory) {
         self.do_store(operands, TRYTE_LEN);
-        Ok(())
     }
 
-    fn op_sh(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_sh(&mut self, operands: &operands::Memory) {
         self.do_store(operands, HALF_LEN);
-        Ok(())
     }
 
-    fn op_sw(&mut self, operands: &operands::Memory) -> Result<()> {
+    fn op_sw(&mut self, operands: &operands::Memory) {
         self.do_store(operands, WORD_LEN);
-        Ok(())
     }
 
-    fn op_bt(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_bt(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, offset, 0, 0);
-        Ok(())
     }
 
-    fn op_b0(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_b0(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, 0, offset, 0);
-        Ok(())
     }
 
-    fn op_b1(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_b1(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, 0, 0, offset);
-        Ok(())
     }
 
-    fn op_bt0(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_bt0(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, offset, offset, 0);
-        Ok(())
     }
 
-    fn op_bt1(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_bt1(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, offset, 0, offset);
-        Ok(())
     }
 
-    fn op_b01(&mut self, operands: &operands::Branch) -> Result<()> {
+    fn op_b01(&mut self, operands: &operands::Branch) {
         let selector = self.get_branch_selector(operands);
         let offset = self.get_branch_offset(operands);
         self.do_branch(selector, 0, offset, offset);
-        Ok(())
     }
 
-    fn op_jmp(&mut self, operands: &operands::Jump) -> Result<()> {
+    fn op_jmp(&mut self, operands: &operands::Jump) {
         let offset = self.get_jump_offset(operands);
         self.do_rel_jump(offset);
-        Ok(())
     }
 
-    fn op_call(&mut self, operands: &operands::Jump) -> Result<()> {
+    fn op_call(&mut self, operands: &operands::Jump) {
         let offset = self.get_jump_offset(operands);
         self.save_pc();
         self.do_rel_jump(offset);
-        Ok(())
     }
 
-    fn op_jmpr(&mut self, operands: &operands::R) -> Result<()> {
+    fn op_jmpr(&mut self, operands: &operands::R) {
         let offset = self.get_r_offset(operands);
         self.do_rel_jump(offset);
-        Ok(())
     }
 
-    fn op_callr(&mut self, operands: &operands::R) -> Result<()> {
+    fn op_callr(&mut self, operands: &operands::R) {
         let offset = self.get_r_offset(operands);
         self.save_pc();
         self.do_rel_jump(offset);
-        Ok(())
     }
 
-    fn op_syscall(&mut self) -> Result<()> {
+    fn op_syscall(&mut self) {
         unimplemented!()
     }
 
-    fn op_break(&mut self) -> Result<()> {
+    fn op_break(&mut self) {
         unimplemented!()
     }
 
