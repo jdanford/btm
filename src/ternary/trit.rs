@@ -41,13 +41,13 @@ impl Trit {
         self.0 << 1 & BITMASK
     }
 
-    pub fn tcmp(self, rhs: Trit) -> Trit {
+    pub fn tcmp(self, rhs: Self) -> Self {
         let i = trit2_index(self, rhs);
         let bits = TRIT2_TO_CMP[i];
         Trit(bits)
     }
 
-    pub fn add_with_carry(self, rhs: Trit, carry_in: Trit) -> (Trit, Trit) {
+    pub fn add_with_carry(self, rhs: Self, carry_in: Self) -> (Self, Self) {
         let i = trit3_index(self, rhs, carry_in);
         let (sum, carry) = TRIT3_TO_SUM_AND_CARRY[i];
         (Trit(sum), Trit(carry))
@@ -149,7 +149,7 @@ impl PartialOrd for Trit {
 }
 
 impl ops::Neg for Trit {
-    type Output = Trit;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
         let bits = self.0 ^ self.negation_bits();
@@ -158,7 +158,7 @@ impl ops::Neg for Trit {
 }
 
 impl ops::Not for Trit {
-    type Output = Trit;
+    type Output = Self;
 
     fn not(self) -> Self::Output {
         -self
@@ -166,9 +166,9 @@ impl ops::Not for Trit {
 }
 
 impl ops::BitAnd for Trit {
-    type Output = Trit;
+    type Output = Self;
 
-    fn bitand(self, rhs: Trit) -> Self::Output {
+    fn bitand(self, rhs: Self) -> Self::Output {
         let i = trit2_index(self, rhs);
         let bits = TRIT2_TO_AND[i];
         Trit(bits)
@@ -176,9 +176,9 @@ impl ops::BitAnd for Trit {
 }
 
 impl ops::BitOr for Trit {
-    type Output = Trit;
+    type Output = Self;
 
-    fn bitor(self, rhs: Trit) -> Self::Output {
+    fn bitor(self, rhs: Self) -> Self::Output {
         let i = trit2_index(self, rhs);
         let bits = TRIT2_TO_OR[i];
         Trit(bits)
@@ -186,9 +186,9 @@ impl ops::BitOr for Trit {
 }
 
 impl ops::Mul for Trit {
-    type Output = Trit;
+    type Output = Self;
 
-    fn mul(self, rhs: Trit) -> Self::Output {
+    fn mul(self, rhs: Self) -> Self::Output {
         let i = trit2_index(self, rhs);
         let bits = TRIT2_TO_PRODUCT[i];
         Trit(bits)

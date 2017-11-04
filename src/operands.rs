@@ -15,8 +15,8 @@ pub struct Empty;
 
 impl Operand for Empty {
     fn from_word(word: &[Tryte]) -> Result<Self> {
-        if word[0].0 & !TRIT4_BITMASK == 0 && word[1] == tryte::ZERO && word[2] == tryte::ZERO &&
-            word[3] == tryte::ZERO
+        if word[0].0 & !TRIT4_BITMASK == 0 && word[1] == tryte::ZERO && word[2] == tryte::ZERO
+            && word[3] == tryte::ZERO
         {
             Ok(Empty)
         } else {
@@ -38,7 +38,7 @@ impl Operand for R {
         let half = &word[..HALF_LEN];
         let (_, trit4_src, _) = trit4_triple_from_half(half);
         let src = StandardRegister::from_trit4(trit4_src)?;
-        Ok(R { src: src })
+        Ok(Self { src: src })
     }
 }
 
@@ -56,7 +56,7 @@ impl Operand for RR {
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
         let rhs = StandardRegister::from_trit4(trit4_rhs)?;
 
-        Ok(RR { lhs: lhs, rhs: rhs })
+        Ok(Self { lhs: lhs, rhs: rhs })
     }
 }
 
@@ -77,7 +77,7 @@ impl Operand for RRR {
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
         let rhs = StandardRegister::from_trit4(trit4_rhs)?;
 
-        Ok(RRR {
+        Ok(Self {
             dest: dest,
             lhs: lhs,
             rhs: rhs,
@@ -100,7 +100,7 @@ impl Operand for RI {
         let mut immediate = [tryte::ZERO; HALF_LEN];
         immediate.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(RI {
+        Ok(Self {
             dest: dest,
             immediate: immediate,
         })
@@ -124,7 +124,7 @@ impl Operand for RRI {
         let mut immediate = [tryte::ZERO; HALF_LEN];
         immediate.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(RRI {
+        Ok(Self {
             dest: dest,
             src: src,
             immediate: immediate,
@@ -149,7 +149,7 @@ impl Operand for Memory {
         let mut offset = [tryte::ZERO; HALF_LEN];
         offset.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(Memory {
+        Ok(Self {
             dest: dest,
             src: src,
             offset: offset,
@@ -176,7 +176,7 @@ impl Operand for Branch {
         let mut offset = [tryte::ZERO; HALF_LEN];
         offset.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(Branch {
+        Ok(Self {
             src: src,
             index: index,
             hint: hint,
@@ -193,7 +193,7 @@ pub struct Jump {
 impl Operand for Jump {
     fn from_word(word: &[Tryte]) -> Result<Self> {
         let offset = addr_from_word(word);
-        Ok(Jump { offset: offset })
+        Ok(Self { offset: offset })
     }
 }
 
@@ -211,7 +211,7 @@ impl Operand for LoadSystem {
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = SystemRegister::from_trit4(trit4_src)?;
 
-        Ok(LoadSystem {
+        Ok(Self {
             dest: dest,
             src: src,
         })
@@ -232,7 +232,7 @@ impl Operand for StoreSystem {
         let dest = SystemRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
 
-        Ok(StoreSystem {
+        Ok(Self {
             dest: dest,
             src: src,
         })

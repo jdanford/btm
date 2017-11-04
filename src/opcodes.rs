@@ -42,7 +42,7 @@ pub const SYSCALL: Opcode = Opcode(34);
 pub const BREAK: Opcode = Opcode(35);
 
 impl Opcode {
-    pub fn from_trit4(trit4: u8) -> Result<Opcode> {
+    pub fn from_trit4(trit4: u8) -> Result<Self> {
         let i = TRIT4_TO_I8[trit4 as usize] as u8;
         if i > BREAK.0 {
             return Err(Error::InvalidOpcode(i));

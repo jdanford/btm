@@ -46,7 +46,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn from_word(word: &[Tryte]) -> Result<Instruction> {
+    pub fn from_word(word: &[Tryte]) -> Result<Self> {
         let opcode_trit4 = word[0].low_trit4();
         let opcode = Opcode::from_trit4(opcode_trit4)?;
         match opcode {

@@ -29,7 +29,7 @@ impl Tryte {
         Trit(bits)
     }
 
-    pub fn set_trit(self, i: usize, trit: Trit) -> Tryte {
+    pub fn set_trit(self, i: usize, trit: Trit) -> Self {
         let shf = (i as u16) * 2;
         let zero_bits = !(0b11 << shf);
         let tryte_bits = self.0 & zero_bits;
@@ -38,7 +38,7 @@ impl Tryte {
         Tryte(bits)
     }
 
-    pub fn from_bytes<R: ReadBytesExt>(reader: &mut R) -> Result<Tryte> {
+    pub fn from_bytes<R: ReadBytesExt>(reader: &mut R) -> Result<Self> {
         let bits = reader.read_u16::<LittleEndian>()?;
         let tryte = Tryte(bits);
 
@@ -57,7 +57,7 @@ impl Tryte {
         Ok(writer.write_u16::<LittleEndian>(self.0)?)
     }
 
-    fn from_hytes(low_hyte: u8, high_hyte: u8) -> Tryte {
+    fn from_hytes(low_hyte: u8, high_hyte: u8) -> Self {
         let bits = (high_hyte as u16) << HYTE_BIT_LEN | (low_hyte as u16);
         Tryte(bits)
     }
@@ -82,7 +82,7 @@ impl Tryte {
         self.0 << 1 & SIGN_BITMASK
     }
 
-    pub fn add_with_carry(self, rhs: Tryte, carry: Trit) -> (Tryte, Trit) {
+    pub fn add_with_carry(self, rhs: Self, carry: Trit) -> (Self, Trit) {
         let mut tryte = ZERO;
         let mut carry = carry;
 
@@ -97,7 +97,7 @@ impl Tryte {
         (tryte, carry)
     }
 
-    pub fn from_hyte_str(s: &str) -> Result<Tryte> {
+    pub fn from_hyte_str(s: &str) -> Result<Self> {
         if s.len() != 2 {
             return Err(Error::InvalidLength(2, s.len()));
         }
@@ -111,7 +111,7 @@ impl Tryte {
             .ok_or_else(|| Error::InvalidString(s.to_owned()))?;
         let high_hyte = hyte::try_from_char(high_char)?;
         let low_hyte = hyte::try_from_char(low_char)?;
-        let tryte = Tryte::from_hytes(low_hyte, high_hyte);
+        let tryte = Self::from_hytes(low_hyte, high_hyte);
         Ok(tryte)
     }
 
@@ -124,7 +124,7 @@ impl Tryte {
 }
 
 impl From<Trit> for Tryte {
-    fn from(trit: Trit) -> Tryte {
+    fn from(trit: Trit) -> Self {
         Tryte(trit.0)
     }
 }
@@ -143,7 +143,7 @@ impl TryInto<Trit> for Tryte {
 }
 
 impl ops::Neg for Tryte {
-    type Output = Tryte;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
         let bits = self.0 ^ self.negation_bits();

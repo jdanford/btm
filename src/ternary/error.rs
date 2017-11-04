@@ -15,7 +15,7 @@ pub enum Error {
 }
 
 impl PartialEq for Error {
-    fn eq(&self, other: &Error) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (&Error::IntegerOutOfBounds(a1, b1, n1), &Error::IntegerOutOfBounds(a2, b2, n2)) => {
                 a1 == a2 && b1 == b2 && n1 == n2
@@ -35,13 +35,13 @@ impl Eq for Error {}
 pub type Result<T> = result::Result<T, Error>;
 
 impl From<fmt::Error> for Error {
-    fn from(error: fmt::Error) -> Error {
+    fn from(error: fmt::Error) -> Self {
         Error::FormatError(error)
     }
 }
 
 impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Error {
+    fn from(error: io::Error) -> Self {
         Error::IoError(error)
     }
 }

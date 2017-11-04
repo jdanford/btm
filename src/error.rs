@@ -12,7 +12,7 @@ pub enum Error {
 pub type Result<T> = result::Result<T, Error>;
 
 impl From<ternary::Error> for Error {
-    fn from(error: ternary::Error) -> Error {
+    fn from(error: ternary::Error) -> Self {
         Error::TernaryError(error)
     }
 }
