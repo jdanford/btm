@@ -4,7 +4,7 @@ use ternary::tables::TRIT4_TO_I8;
 use ternary::{trit, tryte, Ternary, Trit, Tryte};
 use error::Result;
 use registers;
-use registers::{RegisterFile, StandardRegister};
+use registers::{Register, RegisterFile, StandardRegister};
 use operands;
 use instructions::Instruction;
 
@@ -201,37 +201,25 @@ impl<'a> VM<'a> {
     }
 
     fn op_lui(&mut self, operands: &operands::RI) {
+        let i = HALF_LEN;
+        let j = HALF_LEN * 2;
+
         {
-            let i = WORD_LEN;
-            let j = WORD_LEN * 2;
-            let mut dest = &mut self.registers[operands.dest][i..j];
-            dest.copy_from_slice(&operands.immediate);
+            let mut dest = &mut self.registers[operands.dest];
+            dest[0..i].clear();
+            dest[i..j].copy_from_slice(&operands.immediate);
         }
 
         self.registers[registers::ZERO].clear();
     }
 
     fn op_lsr(&mut self, operands: &operands::LoadSystem) {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
-
-        {
-            let src = &self.registers[operands.src];
-            tmp_dest.copy_from_slice(src);
-        }
-
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.copy_register(operands.src, operands.dest);
         self.registers[registers::ZERO].clear();
     }
 
     fn op_ssr(&mut self, operands: &operands::StoreSystem) {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
-
-        {
-            let src = &self.registers[operands.src];
-            tmp_dest.copy_from_slice(src);
-        }
-
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
+        self.copy_register(operands.src, operands.dest);
     }
 
     fn op_lt(&mut self, operands: &operands::Memory) {
@@ -383,6 +371,17 @@ impl<'a> VM<'a> {
         }
 
         self.registers[registers::ZERO].clear();
+    }
+
+    fn copy_register<R: Register, S: Register>(&mut self, src_reg: R, dest_reg: S) {
+        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+
+        {
+            let src = &self.registers[src_reg];
+            tmp_dest.copy_from_slice(src);
+        }
+
+        self.registers[dest_reg].copy_from_slice(tmp_dest);
     }
 
     fn get_branch_selector(&self, operands: &operands::Branch) -> Trit {
