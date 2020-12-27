@@ -1,9 +1,10 @@
 use std::ops::{Index, IndexMut};
 
+use ternary::constants::WORD_LEN;
+use ternary::tables::TRIT4_TO_I8;
+use ternary::{tryte, Tryte};
+
 use crate::error::{Error, Result};
-use crate::ternary::constants::WORD_LEN;
-use crate::ternary::tables::TRIT4_TO_I8;
-use crate::ternary::{tryte, Tryte};
 
 pub trait Register: Sized {
     const COUNT: usize;

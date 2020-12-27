@@ -1,4 +1,5 @@
-use crate::ternary::tables::TRIT4_TO_I8;
+use ternary::tables::TRIT4_TO_I8;
+
 use crate::error::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

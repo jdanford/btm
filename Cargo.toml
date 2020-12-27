@@ -4,7 +4,6 @@ version = "0.1.0"
 authors = ["Jordan Danford <jordandanford@gmail.com>"]
 edition = "2018"
 
-[dependencies]
-byteorder = "1"
-lazy_static = "1"
-phf = { version = "0.8", features = ["macros"] }
+[dependencies.ternary]
+git = "https://github.com/jdanford/ternary"
+version = "0.1"

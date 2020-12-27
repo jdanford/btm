@@ -1,8 +1,8 @@
+use ternary::constants::{HALF_LEN, WORD_LEN};
+use ternary::{tryte, Ternary, Trit, Tryte};
+
 use crate::error::{Error, Result};
 use crate::registers::{Register, StandardRegister, SystemRegister};
-use crate::ternary;
-use crate::ternary::constants::{HALF_LEN, WORD_LEN};
-use crate::ternary::{tryte, Ternary, Trit, Tryte};
 
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;
 

@@ -1,7 +1,5 @@
 use std::result;
 
-use crate::ternary;
-
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {
     InvalidOpcode(u8),

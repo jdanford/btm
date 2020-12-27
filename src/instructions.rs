@@ -1,9 +1,10 @@
+use ternary::Tryte;
+
 use crate::error::Result;
 use crate::opcodes;
 use crate::opcodes::Opcode;
 use crate::operands;
 use crate::operands::Operand;
-use crate::ternary::Tryte;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Instruction {
@@ -95,11 +96,11 @@ impl Instruction {
 mod tests {
     use super::*;
     use crate::registers;
-    use crate::ternary::constants::WORD_LEN;
-    use crate::ternary::test_constants::{TRYTE2_4096, TRYTE4_1073741824, TRYTE_6};
-    use crate::ternary::trit;
-    use crate::ternary::tryte;
-    use crate::ternary::Ternary;
+    use ternary::constants::WORD_LEN;
+    use ternary::test_constants::{TRYTE2_4096, TRYTE4_1073741824, TRYTE_6};
+    use ternary::trit;
+    use ternary::tryte;
+    use ternary::Ternary;
 
     #[test]
     #[allow(clippy::too_many_lines)]

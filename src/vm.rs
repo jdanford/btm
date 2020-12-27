@@ -1,12 +1,12 @@
+use ternary::constants::{HALF_LEN, TRYTE_LEN, WORD_LEN};
+use ternary::tables::TRIT4_TO_I8;
+use ternary::{trit, tryte, Ternary, Trit, Tryte};
+
 use crate::error::Result;
 use crate::instructions::Instruction;
 use crate::operands;
 use crate::registers;
 use crate::registers::{Register, RegisterFile, StandardRegister};
-use crate::ternary;
-use crate::ternary::constants::{HALF_LEN, TRYTE_LEN, WORD_LEN};
-use crate::ternary::tables::TRIT4_TO_I8;
-use crate::ternary::{trit, tryte, Ternary, Trit, Tryte};
 
 const SCRATCH_SPACE_LEN: usize = WORD_LEN * 4;
 const TRIT3_POS_OFFSET: i8 = 13;
