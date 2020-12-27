@@ -1,6 +1,6 @@
 use std::result;
 
-use ternary;
+use crate::ternary;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Error {

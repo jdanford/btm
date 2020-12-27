@@ -1,8 +1,8 @@
-use ternary;
-use ternary::constants::*;
-use ternary::{tryte, Ternary, Trit, Tryte};
-use error::{Error, Result};
-use registers::*;
+use crate::error::{Error, Result};
+use crate::registers::{Register, StandardRegister, SystemRegister};
+use crate::ternary;
+use crate::ternary::constants::{HALF_LEN, WORD_LEN};
+use crate::ternary::{tryte, Ternary, Trit, Tryte};
 
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;
 
@@ -15,7 +15,9 @@ pub struct Empty;
 
 impl Operand for Empty {
     fn from_word(word: &[Tryte]) -> Result<Self> {
-        if word[0].0 & !TRIT4_BITMASK == 0 && word[1] == tryte::ZERO && word[2] == tryte::ZERO
+        if word[0].0 & !TRIT4_BITMASK == 0
+            && word[1] == tryte::ZERO
+            && word[2] == tryte::ZERO
             && word[3] == tryte::ZERO
         {
             Ok(Empty)
@@ -38,7 +40,7 @@ impl Operand for R {
         let half = &word[..HALF_LEN];
         let (_, trit4_src, _) = trit4_triple_from_half(half);
         let src = StandardRegister::from_trit4(trit4_src)?;
-        Ok(Self { src: src })
+        Ok(Self { src })
     }
 }
 
@@ -56,7 +58,7 @@ impl Operand for RR {
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
         let rhs = StandardRegister::from_trit4(trit4_rhs)?;
 
-        Ok(Self { lhs: lhs, rhs: rhs })
+        Ok(Self { lhs, rhs })
     }
 }
 
@@ -77,11 +79,7 @@ impl Operand for RRR {
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
         let rhs = StandardRegister::from_trit4(trit4_rhs)?;
 
-        Ok(Self {
-            dest: dest,
-            lhs: lhs,
-            rhs: rhs,
-        })
+        Ok(Self { dest, lhs, rhs })
     }
 }
 
@@ -100,10 +98,7 @@ impl Operand for RI {
         let mut immediate = [tryte::ZERO; HALF_LEN];
         immediate.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(Self {
-            dest: dest,
-            immediate: immediate,
-        })
+        Ok(Self { dest, immediate })
     }
 }
 
@@ -125,9 +120,9 @@ impl Operand for RRI {
         immediate.copy_from_slice(&word[HALF_LEN..]);
 
         Ok(Self {
-            dest: dest,
-            src: src,
-            immediate: immediate,
+            dest,
+            src,
+            immediate,
         })
     }
 }
@@ -149,11 +144,7 @@ impl Operand for Memory {
         let mut offset = [tryte::ZERO; HALF_LEN];
         offset.copy_from_slice(&word[HALF_LEN..]);
 
-        Ok(Self {
-            dest: dest,
-            src: src,
-            offset: offset,
-        })
+        Ok(Self { dest, src, offset })
     }
 }
 
@@ -177,10 +168,10 @@ impl Operand for Branch {
         offset.copy_from_slice(&word[HALF_LEN..]);
 
         Ok(Self {
-            src: src,
-            index: index,
-            hint: hint,
-            offset: offset,
+            src,
+            index,
+            hint,
+            offset,
         })
     }
 }
@@ -193,7 +184,7 @@ pub struct Jump {
 impl Operand for Jump {
     fn from_word(word: &[Tryte]) -> Result<Self> {
         let offset = addr_from_word(word);
-        Ok(Self { offset: offset })
+        Ok(Self { offset })
     }
 }
 
@@ -211,10 +202,7 @@ impl Operand for LoadSystem {
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = SystemRegister::from_trit4(trit4_src)?;
 
-        Ok(Self {
-            dest: dest,
-            src: src,
-        })
+        Ok(Self { dest, src })
     }
 }
 
@@ -232,10 +220,7 @@ impl Operand for StoreSystem {
         let dest = SystemRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
 
-        Ok(Self {
-            dest: dest,
-            src: src,
-        })
+        Ok(Self { dest, src })
     }
 }
 

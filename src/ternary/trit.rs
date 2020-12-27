@@ -1,12 +1,14 @@
-use std::convert::TryFrom;
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt;
 use std::ops;
 
-use phf;
+use phf::phf_map;
 
-use super::tables::*;
 use super::error::{Error, Result};
+use super::tables::{
+    TRIT2_TO_AND, TRIT2_TO_CMP, TRIT2_TO_OR, TRIT2_TO_PRODUCT, TRIT3_TO_SUM_AND_CARRY,
+};
 
 pub const BITMASK: u16 = 0b11;
 
@@ -20,7 +22,7 @@ pub const CHAR_POS: char = '1';
 pub const CHAR_INVALID: char = '?';
 pub const CHAR_NEG: char = 'T';
 
-#[derive(Clone, Copy, Default, Eq, Ord, PartialEq)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Trit(pub u16);
 
 pub const ZERO: Trit = Trit(BIN_ZERO);
@@ -141,10 +143,16 @@ impl TryFrom<Ordering> for Trit {
     }
 }
 
+impl Ord for Trit {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let cmp_trit = self.tcmp(*other);
+        cmp_trit.into()
+    }
+}
+
 impl PartialOrd for Trit {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let cmp_trit = self.tcmp(*other);
-        Some(cmp_trit.into())
+        Some(self.cmp(other))
     }
 }
 
@@ -207,9 +215,9 @@ mod tests {
 
     #[test]
     fn trit_into_i16() {
-        assert_eq!(-1i16, Trit(BIN_NEG).into());
-        assert_eq!(0i16, Trit(BIN_ZERO).into());
-        assert_eq!(1i16, Trit(BIN_POS).into());
+        assert_eq!(-1_i16, Trit(BIN_NEG).into());
+        assert_eq!(0_i16, Trit(BIN_ZERO).into());
+        assert_eq!(1_i16, Trit(BIN_POS).into());
     }
 
     #[test]
@@ -248,6 +256,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::eq_op)]
     fn trit_and() {
         assert_eq!(ZERO, ZERO & ZERO);
         assert_eq!(ZERO, ZERO & POS);
@@ -261,6 +270,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::eq_op)]
     fn trit_or() {
         assert_eq!(ZERO, ZERO | ZERO);
         assert_eq!(POS, ZERO | POS);
@@ -318,6 +328,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::eq_op)]
     fn trit_cmp() {
         assert!(ZERO == ZERO);
         assert!(ZERO < POS);

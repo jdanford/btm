@@ -5,11 +5,11 @@ use std::ops;
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
-use super::constants::*;
+use super::constants::HYTE_BIT_LEN;
 use super::error::{Error, Result};
+use super::hyte;
 use super::trit;
 use super::trit::Trit;
-use super::hyte;
 
 pub use super::constants::TRYTE_TRIT_LEN as TRIT_LEN;
 
@@ -53,7 +53,7 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn write_bytes<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
+    pub fn write_bytes<W: WriteBytesExt>(self, writer: &mut W) -> Result<()> {
         Ok(writer.write_u16::<LittleEndian>(self.0)?)
     }
 
@@ -115,7 +115,7 @@ impl Tryte {
         Ok(tryte)
     }
 
-    pub fn write_hytes<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+    pub fn write_hytes<W: io::Write>(self, writer: &mut W) -> io::Result<()> {
         let (low_hyte, high_hyte) = self.hytes();
         let low_char = hyte::into_char(low_hyte);
         let high_char = hyte::into_char(high_hyte);
@@ -168,8 +168,10 @@ impl fmt::Display for Tryte {
 
 #[cfg(test)]
 mod tests {
+    use super::super::test_constants::{
+        TRYTE_0, TRYTE_1, TRYTE_64, TRYTE_MAX, TRYTE_MIN, TRYTE_NEG1, TRYTE_NEG64,
+    };
     use super::*;
-    use super::super::test_constants::*;
 
     use std::io::Cursor;
 

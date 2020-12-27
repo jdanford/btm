@@ -1,9 +1,9 @@
-use ternary::Tryte;
-use error::Result;
-use opcodes;
-use opcodes::Opcode;
-use operands;
-use operands::Operand;
+use crate::error::Result;
+use crate::opcodes;
+use crate::opcodes::Opcode;
+use crate::operands;
+use crate::operands::Operand;
+use crate::ternary::Tryte;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Instruction {
@@ -94,15 +94,16 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::registers;
-
-    use ternary::constants::*;
-    use ternary::test_constants::*;
-    use ternary::trit;
-    use ternary::tryte;
-    use ternary::Ternary;
+    use crate::registers;
+    use crate::ternary::constants::WORD_LEN;
+    use crate::ternary::test_constants::{TRYTE2_4096, TRYTE4_1073741824, TRYTE_6};
+    use crate::ternary::trit;
+    use crate::ternary::tryte;
+    use crate::ternary::Ternary;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
+    // TODO: use macro
     fn instruction_from_word() {
         assert_eq!(
             Instruction::And(operands::RRR {

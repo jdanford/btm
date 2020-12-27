@@ -1,6 +1,6 @@
 use std::char;
 
-use super::constants::*;
+use super::constants::WORD_LEN;
 use super::error::{Error, Result};
 use super::trit;
 use super::tryte;
@@ -70,9 +70,9 @@ pub fn decode_str(src: &[Tryte]) -> Result<(String, usize)> {
 pub fn encode_char(dest: &mut [Tryte], c: char) -> Result<usize> {
     let codepoint = c as u32;
     let (len, codepoint_offset) = match codepoint as usize {
-        SINGLE_MIN...SINGLE_MAX => Ok((1, SINGLE_OFFSET)),
-        DOUBLE_MIN...DOUBLE_MAX => Ok((2, DOUBLE_OFFSET)),
-        TRIPLE_MIN...TRIPLE_MAX => Ok((3, TRIPLE_OFFSET)),
+        SINGLE_MIN..=SINGLE_MAX => Ok((1, SINGLE_OFFSET)),
+        DOUBLE_MIN..=DOUBLE_MAX => Ok((2, DOUBLE_OFFSET)),
+        TRIPLE_MIN..=TRIPLE_MAX => Ok((3, TRIPLE_OFFSET)),
         _ => Err(Error::InvalidCharacter(c)),
     }?;
 
@@ -182,8 +182,7 @@ pub fn decode_char(src: &[Tryte]) -> Result<(char, usize)> {
 
     let shifted_codepoint = dest.into_i64() as i32;
     let codepoint = unshift_codepoint(shifted_codepoint, codepoint_offset);
-    let c = char::from_u32(codepoint)
-        .ok_or_else(|| invalid_encoding_from_trytes(src))?;
+    let c = char::from_u32(codepoint).ok_or_else(|| invalid_encoding_from_trytes(src))?;
 
     Ok((c, len))
 }

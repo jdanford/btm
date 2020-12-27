@@ -1,21 +1,26 @@
-#![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
-#![cfg_attr(feature = "cargo-clippy",
-           allow(cast_lossless, cast_possible_truncation, cast_possible_wrap, cast_sign_loss,
-                   missing_docs_in_private_items, pub_enum_variant_names))]
+#![cfg_attr(feature = "cargo-clippy", deny(clippy::all, clippy::pedantic))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(
+        clippy::cast_lossless,
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        clippy::missing_docs_in_private_items,
+        clippy::non_ascii_literal,
+        clippy::pub_enum_variant_names
+    )
+)]
 #![allow(unused)] // necessary until there are binaries
-#![feature(try_from)]
-#![feature(plugin)]
-#![plugin(phf_macros)]
 
 extern crate byteorder;
-#[macro_use]
 extern crate lazy_static;
 extern crate phf;
 
-mod ternary;
 mod error;
-mod registers;
+mod instructions;
 mod opcodes;
 mod operands;
-mod instructions;
+mod registers;
+mod ternary;
 mod vm;

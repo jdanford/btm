@@ -1,6 +1,8 @@
 use std::i8;
 use std::u16;
 
+use lazy_static::lazy_static;
+
 lazy_static! {
     pub static ref TRIT2_TO_AND: [u16; 16] = {
         let mut table = [u16::MAX; 16];

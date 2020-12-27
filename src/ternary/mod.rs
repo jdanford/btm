@@ -1,11 +1,11 @@
-pub mod error;
 pub mod constants;
-pub mod test_constants;
-pub mod tables;
-pub mod trit;
+pub mod error;
 mod hyte;
-pub mod tryte;
+pub mod tables;
+pub mod test_constants;
 pub mod text;
+pub mod trit;
+pub mod tryte;
 
 use std::convert::TryFrom;
 use std::io;
@@ -20,10 +20,10 @@ pub use self::tryte::Tryte;
 pub trait Ternary {
     fn trit_len(&self) -> usize;
     fn tryte_len(&self) -> usize;
-    fn get_trit(&self, usize) -> Trit;
-    fn set_trit(&mut self, usize, trit: Trit);
-    fn get_tryte(&self, usize) -> Tryte;
-    fn set_tryte(&mut self, usize, tryte: Tryte);
+    fn get_trit(&self, i: usize) -> Trit;
+    fn set_trit(&mut self, i: usize, trit: Trit);
+    fn get_tryte(&self, i: usize) -> Tryte;
+    fn set_tryte(&mut self, i: usize, tryte: Tryte);
 
     fn range(&self) -> i64 {
         let base = 3_i64;
@@ -389,17 +389,23 @@ fn indices(i: usize) -> (usize, usize) {
 
 #[cfg(test)]
 mod tests {
+    use super::test_constants::{
+        BYTES_0, BYTES_1, BYTES_MAX, BYTES_MIN, BYTES_NEG1, TRYTE12_0, TRYTE2_0, TRYTE2_1,
+        TRYTE2_16, TRYTE2_256, TRYTE2_4096, TRYTE2_512, TRYTE2_64, TRYTE2_8, TRYTE2_9, TRYTE2_NEG1,
+        TRYTE2_NEG16, TRYTE2_NEG256, TRYTE2_NEG4096, TRYTE2_NEG512, TRYTE2_NEG64, TRYTE2_NEG8,
+        TRYTE2_NEG9, TRYTE4_0, TRYTE4_1, TRYTE4_4096, TRYTE4_64, TRYTE4_81, TRYTE4_MAX, TRYTE4_MIN,
+        TRYTE4_NEG1, TRYTE4_NEG4096, TRYTE4_NEG64, TRYTE4_NEG81, WORD_MAX, WORD_MIN,
+    };
     use super::*;
-    use super::test_constants::*;
 
     use std::io::Cursor;
 
     #[test]
     fn ternary_into_i64() {
         assert_eq!(WORD_MIN, TRYTE4_MIN.into_i64());
-        assert_eq!(-1i64, TRYTE4_NEG1.into_i64());
-        assert_eq!(0i64, TRYTE4_0.into_i64());
-        assert_eq!(1i64, TRYTE4_1.into_i64());
+        assert_eq!(-1_i64, TRYTE4_NEG1.into_i64());
+        assert_eq!(0_i64, TRYTE4_0.into_i64());
+        assert_eq!(1_i64, TRYTE4_1.into_i64());
         assert_eq!(WORD_MAX, TRYTE4_MAX.into_i64());
     }
 
@@ -698,6 +704,8 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
+    // TODO: use macro
     fn ternary_shift() {
         assert_eq!(
             tryte12_from_trit_str(
