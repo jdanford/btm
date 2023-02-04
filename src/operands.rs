@@ -25,7 +25,7 @@ impl Operand for Empty {
             let mut bytes = Vec::new();
             word.write_trits(&mut bytes)?;
             let s = String::from_utf8_lossy(&bytes).into_owned();
-            Err(Error::TernaryError(ternary::Error::InvalidEncoding(s)))
+            Err(ternary::Error::InvalidEncoding(s).into())
         }
     }
 }

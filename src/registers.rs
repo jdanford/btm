@@ -18,14 +18,14 @@ pub trait Register: Sized {
         Ok(Self::from_index(i as usize))
     }
 
-    fn into_indices(&self) -> (usize, usize) {
+    fn into_indices(self) -> (usize, usize) {
         let i = self.into_index();
         let j = i + WORD_LEN;
         (i, j)
     }
 
     fn from_index(i: usize) -> Self;
-    fn into_index(&self) -> usize;
+    fn into_index(self) -> usize;
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -63,7 +63,7 @@ impl Register for StandardRegister {
         StandardRegister(i)
     }
 
-    fn into_index(&self) -> usize {
+    fn into_index(self) -> usize {
         self.0 as usize
     }
 }
@@ -83,7 +83,7 @@ impl Register for SystemRegister {
         SystemRegister(i)
     }
 
-    fn into_index(&self) -> usize {
+    fn into_index(self) -> usize {
         self.0 as usize + StandardRegister::COUNT
     }
 }
