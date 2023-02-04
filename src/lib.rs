@@ -7,7 +7,7 @@
         clippy::cast_possible_wrap,
         clippy::cast_sign_loss,
         clippy::missing_docs_in_private_items,
-        clippy::pub_enum_variant_names
+        clippy::upper_case_acronyms
     )
 )]
 #![allow(unused)] // necessary until there are binaries

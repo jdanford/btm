@@ -94,13 +94,17 @@ impl Instruction {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryInto;
+
     use super::*;
     use crate::registers;
     use ternary::constants::WORD_LEN;
-    use ternary::test_constants::{TRYTE2_4096, TRYTE4_1073741824, TRYTE_6};
+    use ternary::test_constants::{TRYTE4_1073741824, TRYTE4_4096, TRYTE_6};
     use ternary::trit;
     use ternary::tryte;
     use ternary::Ternary;
+
+    const TRYTE2_4096: [Tryte; 2] = [TRYTE4_4096[2], TRYTE4_4096[3]];
 
     #[test]
     #[allow(clippy::too_many_lines)]

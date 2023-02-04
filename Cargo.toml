@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies.ternary]
 git = "https://github.com/jdanford/ternary"
-version = "0.1"
+version = "0.2.1"

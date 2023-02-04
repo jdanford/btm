@@ -1,6 +1,7 @@
 use ternary::constants::{HALF_LEN, TRYTE_LEN, WORD_LEN};
 use ternary::tables::TRIT4_TO_I8;
-use ternary::{trit, tryte, Ternary, Trit, Tryte};
+use ternary::Ternary;
+use ternary::{trit, tryte, Trit, Tryte};
 
 use crate::error::Result;
 use crate::instructions::Instruction;
@@ -97,26 +98,26 @@ impl<'a> VM<'a> {
     }
 
     fn op_and(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::and);
+        self.simple_rrr(operands, ternary::slice::and);
     }
 
     fn op_or(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::or);
+        self.simple_rrr(operands, ternary::slice::or);
     }
 
     fn op_tmul(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::tmul);
+        self.simple_rrr(operands, ternary::slice::tmul);
     }
 
     fn op_tcmp(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::tcmp);
+        self.simple_rrr(operands, ternary::slice::tcmp);
     }
 
     fn op_cmp(&mut self, operands: operands::RRR) {
         let cmp_trit = {
             let lhs = &self.registers[operands.lhs];
             let rhs = &self.registers[operands.rhs];
-            ternary::compare(lhs, rhs)
+            ternary::slice::compare(lhs, rhs)
         };
 
         self.registers[operands.dest].clear();
@@ -125,7 +126,7 @@ impl<'a> VM<'a> {
     }
 
     fn op_shf(&mut self, operands: operands::RRR) {
-        let offset = (&self.registers[operands.rhs]).into_i64() as isize;
+        let offset = self.registers[operands.rhs].as_i64() as isize;
         self.shift(operands.lhs, offset);
         self.copy_shift_result(operands.dest);
     }
@@ -135,7 +136,7 @@ impl<'a> VM<'a> {
         let carry = {
             let lhs = &self.registers[operands.lhs];
             let rhs = &self.registers[operands.rhs];
-            ternary::add(tmp_dest, lhs, rhs, trit::ZERO)
+            ternary::slice::add(tmp_dest, lhs, rhs, trit::ZERO)
         };
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
@@ -153,7 +154,7 @@ impl<'a> VM<'a> {
         {
             let lhs = &self.registers[operands.lhs];
             let rhs = &self.registers[operands.rhs];
-            ternary::multiply(tmp_dest, lhs, rhs)
+            ternary::slice::multiply(tmp_dest, lhs, rhs);
         }
 
         self.registers[registers::LO].copy_from_slice(&tmp_dest[0..i]);
@@ -166,23 +167,23 @@ impl<'a> VM<'a> {
     }
 
     fn op_andi(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::and);
+        self.simple_rri(operands, ternary::slice::and);
     }
 
     fn op_ori(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::or);
+        self.simple_rri(operands, ternary::slice::or);
     }
 
     fn op_tmuli(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::tmul);
+        self.simple_rri(operands, ternary::slice::tmul);
     }
 
     fn op_tcmpi(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::tcmp);
+        self.simple_rri(operands, ternary::slice::tcmp);
     }
 
     fn op_shfi(&mut self, operands: operands::RRI) {
-        let offset = operands.immediate.into_i64() as isize;
+        let offset = operands.immediate.as_i64() as isize;
         self.shift(operands.src, offset);
         self.copy_shift_result(operands.dest);
     }
@@ -192,7 +193,7 @@ impl<'a> VM<'a> {
         let carry = {
             let lhs = &self.registers[operands.src];
             let rhs = &operands.immediate;
-            ternary::add(tmp_dest, lhs, rhs, trit::ZERO)
+            ternary::slice::add(tmp_dest, lhs, rhs, trit::ZERO)
         };
 
         self.registers[operands.dest].copy_from_slice(tmp_dest);
@@ -350,7 +351,7 @@ impl<'a> VM<'a> {
     fn shift(&mut self, src_reg: StandardRegister, offset: isize) {
         let tmp_dest = &mut self.scratch_space[0..(WORD_LEN * 3)];
         let src = &self.registers[src_reg];
-        ternary::shift(tmp_dest, src, offset);
+        ternary::slice::shift(tmp_dest, src, offset);
     }
 
     fn copy_shift_result(&mut self, dest_reg: StandardRegister) {
@@ -431,7 +432,7 @@ impl<'a> VM<'a> {
     fn get_memory_addr(&mut self, operands: operands::Memory) -> usize {
         let base_addr = {
             let addr_src = &self.registers[operands.dest];
-            addr_src.into_i64() as u32
+            addr_src.as_i64() as u32
         };
         let offset = self.get_memory_offset(operands);
         (base_addr as i32 + offset) as usize
@@ -440,30 +441,30 @@ impl<'a> VM<'a> {
     fn get_jump_offset(&mut self, operands: operands::Jump) -> i32 {
         let offset_dest = &mut self.scratch_space[0..WORD_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.into_i64() as i32
+        offset_dest.as_i64() as i32
     }
 
     fn get_branch_offset(&mut self, operands: operands::Branch) -> i32 {
         let offset_dest = &mut self.scratch_space[0..HALF_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.into_i64() as i32
+        offset_dest.as_i64() as i32
     }
 
     fn get_memory_offset(&mut self, operands: operands::Memory) -> i32 {
         let offset_dest = &mut self.scratch_space[0..HALF_LEN];
         offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.into_i64() as i32
+        offset_dest.as_i64() as i32
     }
 
     fn get_r_offset(&self, operands: operands::R) -> i32 {
         let offset_src = &self.registers[operands.src];
-        offset_src.into_i64() as i32
+        offset_src.as_i64() as i32
     }
 
     fn save_pc(&mut self) {
         self.registers[registers::RA]
             .read_i64(self.pc as i64)
-            .expect("ternary arithmetic error")
+            .expect("ternary arithmetic error");
     }
 
     fn jump_relative(&mut self, offset: i32) {

@@ -64,7 +64,7 @@ impl Register for StandardRegister {
     }
 
     fn into_index(self) -> usize {
-        self.0 as usize
+        self.0
     }
 }
 
@@ -84,7 +84,7 @@ impl Register for SystemRegister {
     }
 
     fn into_index(self) -> usize {
-        self.0 as usize + StandardRegister::COUNT
+        self.0 + StandardRegister::COUNT
     }
 }
 

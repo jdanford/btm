@@ -1,3 +1,5 @@
+use std::convert::{TryFrom, TryInto};
+
 use ternary::constants::{HALF_LEN, WORD_LEN};
 use ternary::{tryte, Ternary, Trit, Tryte};
 
@@ -15,7 +17,7 @@ pub struct Empty;
 
 impl Operand for Empty {
     fn from_word(word: &[Tryte]) -> Result<Self> {
-        if word[0].0 & !TRIT4_BITMASK == 0
+        if u16::from(word[0]) & !TRIT4_BITMASK == 0
             && word[1] == tryte::ZERO
             && word[2] == tryte::ZERO
             && word[3] == tryte::ZERO
@@ -162,7 +164,7 @@ impl Operand for Branch {
         let (_, trit4_src, trit4_index_hint) = trit4_triple_from_half(half);
 
         let src = StandardRegister::from_trit4(trit4_src)?;
-        let index = (trit4_index_hint & tryte::HYTE_BITMASK) as u8;
+        let index = (trit4_index_hint & tryte::HYTE_BITMASK);
         let hint = Trit::from_trit4(trit4_index_hint >> 6)?;
         let mut offset = [tryte::ZERO; HALF_LEN];
         offset.copy_from_slice(&word[HALF_LEN..]);
@@ -225,8 +227,8 @@ impl Operand for StoreSystem {
 }
 
 fn trit4_triple_from_half(half: &[Tryte]) -> (u8, u8, u8) {
-    let trit6_a = half[0].0;
-    let trit6_b = half[1].0;
+    let trit6_a = u16::from(half[0]);
+    let trit6_b = u16::from(half[1]);
 
     let trit4_a = trit6_a as u8;
     let trit4_b = ((trit6_a >> 8) | (trit6_b << 4)) as u8;
@@ -235,10 +237,10 @@ fn trit4_triple_from_half(half: &[Tryte]) -> (u8, u8, u8) {
 }
 
 fn addr_from_word(word: &[Tryte]) -> [Tryte; WORD_LEN] {
-    let trits_0 = word[0].0;
-    let trits_1 = word[1].0;
-    let trits_2 = word[2].0;
-    let trits_3 = word[3].0;
+    let trits_0 = u16::from(word[0]);
+    let trits_1 = u16::from(word[1]);
+    let trits_2 = u16::from(word[2]);
+    let trits_3 = u16::from(word[3]);
 
     let addr_trits_0 = (trits_0 >> 8 | trits_1 << 4) & tryte::BITMASK;
     let addr_trits_1 = (trits_1 >> 8 | trits_2 << 4) & tryte::BITMASK;
@@ -246,9 +248,9 @@ fn addr_from_word(word: &[Tryte]) -> [Tryte; WORD_LEN] {
     let addr_trits_3 = (trits_3 >> 8) & tryte::BITMASK;
 
     [
-        Tryte(addr_trits_0),
-        Tryte(addr_trits_1),
-        Tryte(addr_trits_2),
-        Tryte(addr_trits_3),
+        addr_trits_0.try_into().unwrap(),
+        addr_trits_1.try_into().unwrap(),
+        addr_trits_2.try_into().unwrap(),
+        addr_trits_3.try_into().unwrap(),
     ]
 }
