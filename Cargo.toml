@@ -2,8 +2,7 @@
 name = "btm"
 version = "0.1.0"
 authors = ["Jordan Danford <jordandanford@gmail.com>"]
-edition = "2018"
+edition = "2024"
 
-[dependencies.ternary]
-git = "https://github.com/jdanford/ternary"
-version = "0.2.1"
+[dependencies]
+ternary = { version = "0.4", git = "https://github.com/jdanford/ternary", tag = "v0.4" }

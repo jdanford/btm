@@ -1,7 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 
-use ternary::constants::{HALF_LEN, WORD_LEN};
-use ternary::{tryte, Ternary, Trit, Tryte};
+use ternary::{T12, T24, Trit, Tryte, tryte};
 
 use crate::error::{Error, Result};
 use crate::registers::{Register, StandardRegister, SystemRegister};
@@ -9,25 +8,23 @@ use crate::registers::{Register, StandardRegister, SystemRegister};
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;
 
 pub trait Operand: Sized {
-    fn from_word(word: &[Tryte]) -> Result<Self>;
+    fn from_word(word: T24) -> Result<Self>;
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Empty;
 
 impl Operand for Empty {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        if u16::from(word[0]) & !TRIT4_BITMASK == 0
-            && word[1] == tryte::ZERO
-            && word[2] == tryte::ZERO
-            && word[3] == tryte::ZERO
+    fn from_word(word: T24) -> Result<Self> {
+        let trytes = word.into_trytes();
+        if trytes[0].into_raw() & !TRIT4_BITMASK == 0
+            && trytes[1] == Tryte::ZERO
+            && trytes[2] == Tryte::ZERO
+            && trytes[3] == Tryte::ZERO
         {
             Ok(Empty)
         } else {
-            let mut bytes = Vec::new();
-            word.write_trits(&mut bytes)?;
-            let s = String::from_utf8_lossy(&bytes).into_owned();
-            Err(ternary::Error::InvalidEncoding(s).into())
+            Err(ternary::Error::InvalidEncoding(trytes.into()).into())
         }
     }
 }
@@ -38,8 +35,8 @@ pub struct R {
 }
 
 impl Operand for R {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_src, _) = trit4_triple_from_half(half);
         let src = StandardRegister::from_trit4(trit4_src)?;
         Ok(Self { src })
@@ -53,8 +50,8 @@ pub struct RR {
 }
 
 impl Operand for RR {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_lhs, trit4_rhs) = trit4_triple_from_half(half);
 
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
@@ -72,10 +69,10 @@ pub struct RRR {
 }
 
 impl Operand for RRR {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, trit4_lhs) = trit4_triple_from_half(half);
-        let trit4_rhs = word[HALF_LEN].low_trit4();
+        let trit4_rhs = word.into_trytes()[2].low_trit4();
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
@@ -88,17 +85,19 @@ impl Operand for RRR {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RI {
     pub dest: StandardRegister,
-    pub immediate: [Tryte; HALF_LEN],
+    pub immediate: T12,
 }
 
 impl Operand for RI {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, _) = trit4_triple_from_half(half);
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
-        let mut immediate = [tryte::ZERO; HALF_LEN];
-        immediate.copy_from_slice(&word[HALF_LEN..]);
+
+        let word_trytes = word.into_trytes();
+        let immediate_trytes = word_trytes[2..].try_into().unwrap();
+        let immediate = T12::from_trytes(immediate_trytes);
 
         Ok(Self { dest, immediate })
     }
@@ -108,18 +107,20 @@ impl Operand for RI {
 pub struct RRI {
     pub dest: StandardRegister,
     pub src: StandardRegister,
-    pub immediate: [Tryte; HALF_LEN],
+    pub immediate: T12,
 }
 
 impl Operand for RRI {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
-        let mut immediate = [tryte::ZERO; HALF_LEN];
-        immediate.copy_from_slice(&word[HALF_LEN..]);
+
+        let word_trytes = word.into_trytes();
+        let immediate_trytes = word_trytes[2..].try_into().unwrap();
+        let immediate = T12::from_trytes(immediate_trytes);
 
         Ok(Self {
             dest,
@@ -133,18 +134,20 @@ impl Operand for RRI {
 pub struct Memory {
     pub dest: StandardRegister,
     pub src: StandardRegister,
-    pub offset: [Tryte; HALF_LEN],
+    pub offset: T12,
 }
 
 impl Operand for Memory {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
-        let mut offset = [tryte::ZERO; HALF_LEN];
-        offset.copy_from_slice(&word[HALF_LEN..]);
+
+        let word_trytes = word.into_trytes();
+        let offset_trytes = word_trytes[2..].try_into().unwrap();
+        let offset = T12::from_trytes(offset_trytes);
 
         Ok(Self { dest, src, offset })
     }
@@ -155,19 +158,21 @@ pub struct Branch {
     pub src: StandardRegister,
     pub index: u8,
     pub hint: Trit,
-    pub offset: [Tryte; HALF_LEN],
+    pub offset: T12,
 }
 
 impl Operand for Branch {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_src, trit4_index_hint) = trit4_triple_from_half(half);
 
         let src = StandardRegister::from_trit4(trit4_src)?;
         let index = (trit4_index_hint & tryte::HYTE_BITMASK);
         let hint = Trit::from_trit4(trit4_index_hint >> 6)?;
-        let mut offset = [tryte::ZERO; HALF_LEN];
-        offset.copy_from_slice(&word[HALF_LEN..]);
+
+        let word_trytes = word.into_trytes();
+        let offset_trytes = word_trytes[2..].try_into().unwrap();
+        let offset = T12::from_trytes(offset_trytes);
 
         Ok(Self {
             src,
@@ -180,11 +185,11 @@ impl Operand for Branch {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Jump {
-    pub offset: [Tryte; WORD_LEN],
+    pub offset: T24,
 }
 
 impl Operand for Jump {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
+    fn from_word(word: T24) -> Result<Self> {
         let offset = addr_from_word(word);
         Ok(Self { offset })
     }
@@ -197,8 +202,8 @@ pub struct LoadSystem {
 }
 
 impl Operand for LoadSystem {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
@@ -215,8 +220,8 @@ pub struct StoreSystem {
 }
 
 impl Operand for StoreSystem {
-    fn from_word(word: &[Tryte]) -> Result<Self> {
-        let half = &word[..HALF_LEN];
+    fn from_word(word: T24) -> Result<Self> {
+        let half = word.resize();
         let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
 
         let dest = SystemRegister::from_trit4(trit4_dest)?;
@@ -226,9 +231,10 @@ impl Operand for StoreSystem {
     }
 }
 
-fn trit4_triple_from_half(half: &[Tryte]) -> (u8, u8, u8) {
-    let trit6_a = u16::from(half[0]);
-    let trit6_b = u16::from(half[1]);
+fn trit4_triple_from_half(half: T12) -> (u8, u8, u8) {
+    let trytes = half.into_trytes();
+    let trit6_a = trytes[0].into_raw();
+    let trit6_b = trytes[1].into_raw();
 
     let trit4_a = trit6_a as u8;
     let trit4_b = ((trit6_a >> 8) | (trit6_b << 4)) as u8;
@@ -236,21 +242,17 @@ fn trit4_triple_from_half(half: &[Tryte]) -> (u8, u8, u8) {
     (trit4_a, trit4_b, trit4_c)
 }
 
-fn addr_from_word(word: &[Tryte]) -> [Tryte; WORD_LEN] {
-    let trits_0 = u16::from(word[0]);
-    let trits_1 = u16::from(word[1]);
-    let trits_2 = u16::from(word[2]);
-    let trits_3 = u16::from(word[3]);
+fn addr_from_word(word: T24) -> T24 {
+    let trytes = word.into_trytes();
+    let trits_0 = trytes[0].into_raw();
+    let trits_1 = trytes[1].into_raw();
+    let trits_2 = trytes[2].into_raw();
+    let trits_3 = trytes[3].into_raw();
 
-    let addr_trits_0 = (trits_0 >> 8 | trits_1 << 4) & tryte::BITMASK;
-    let addr_trits_1 = (trits_1 >> 8 | trits_2 << 4) & tryte::BITMASK;
-    let addr_trits_2 = (trits_2 >> 8 | trits_3 << 4) & tryte::BITMASK;
-    let addr_trits_3 = (trits_3 >> 8) & tryte::BITMASK;
+    let addr_tryte_0 = Tryte::from_raw((trits_0 >> 8 | trits_1 << 4) & tryte::BITMASK);
+    let addr_tryte_1 = Tryte::from_raw((trits_1 >> 8 | trits_2 << 4) & tryte::BITMASK);
+    let addr_tryte_2 = Tryte::from_raw((trits_2 >> 8 | trits_3 << 4) & tryte::BITMASK);
+    let addr_tryte_3 = Tryte::from_raw((trits_3 >> 8) & tryte::BITMASK);
 
-    [
-        addr_trits_0.try_into().unwrap(),
-        addr_trits_1.try_into().unwrap(),
-        addr_trits_2.try_into().unwrap(),
-        addr_trits_3.try_into().unwrap(),
-    ]
+    T24::from_trytes([addr_tryte_0, addr_tryte_1, addr_tryte_2, addr_tryte_3])
 }

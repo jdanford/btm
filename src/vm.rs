@@ -1,7 +1,7 @@
-use ternary::constants::{HALF_LEN, TRYTE_LEN, WORD_LEN};
-use ternary::tables::TRIT4_TO_I8;
-use ternary::Ternary;
-use ternary::{trit, tryte, Trit, Tryte};
+use std::ops::{BitAnd, BitOr, Mul};
+
+use ternary::trit::{_0, _1, _T};
+use ternary::{T12, T24, T48, TInt, Trit, Tryte, tables::TRIT4_TO_I8, trit, tryte};
 
 use crate::error::Result;
 use crate::instructions::Instruction;
@@ -9,14 +9,14 @@ use crate::operands;
 use crate::registers;
 use crate::registers::{Register, RegisterFile, StandardRegister};
 
-const SCRATCH_SPACE_LEN: usize = WORD_LEN * 4;
+const SCRATCH_SPACE_LEN: usize = 4;
 const TRIT3_POS_OFFSET: i8 = 13;
 
 pub struct VM<'a> {
     running: bool,
     pc: u32,
     registers: RegisterFile,
-    scratch_space: [Tryte; SCRATCH_SPACE_LEN],
+    // scratch_space: [T24; SCRATCH_SPACE_LEN],
     jump_table: [i32; 4],
     memory: &'a mut [Tryte],
 }
@@ -27,7 +27,7 @@ impl<'a> VM<'a> {
             running: false,
             pc: 0,
             registers: RegisterFile::new(),
-            scratch_space: [tryte::ZERO; SCRATCH_SPACE_LEN],
+            // scratch_space: [T24::ZERO; SCRATCH_SPACE_LEN],
             jump_table: [0; 4],
             memory,
         }
@@ -90,75 +90,67 @@ impl<'a> VM<'a> {
 
     fn next_instruction(&mut self) -> Result<Instruction> {
         let i = self.pc as usize;
-        let j = i + WORD_LEN;
-        self.pc += WORD_LEN as u32;
+        let j = i + T24::SIZE;
+        self.pc += T24::SIZE as u32;
 
-        let word = &self.memory[i..j];
+        let word_trytes = self.memory[i..][..4].try_into().unwrap();
+        let word = T24::from_trytes(word_trytes);
         Instruction::from_word(word)
     }
 
     fn op_and(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::slice::and);
+        self.simple_rrr(operands, T24::bitand);
     }
 
     fn op_or(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::slice::or);
+        self.simple_rrr(operands, T24::bitor);
     }
 
     fn op_tmul(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::slice::tmul);
+        self.simple_rrr(operands, T24::tmul);
     }
 
     fn op_tcmp(&mut self, operands: operands::RRR) {
-        self.simple_rrr(operands, ternary::slice::tcmp);
+        self.simple_rrr(operands, T24::tcmp);
     }
 
     fn op_cmp(&mut self, operands: operands::RRR) {
-        let cmp_trit = {
-            let lhs = &self.registers[operands.lhs];
-            let rhs = &self.registers[operands.rhs];
-            ternary::slice::compare(lhs, rhs)
-        };
+        let lhs = self.registers[operands.lhs];
+        let rhs = self.registers[operands.rhs];
+        let cmp_trit = lhs.cmp_trit(rhs);
 
-        self.registers[operands.dest].clear();
+        self.registers[operands.dest] = T24::ZERO;
         self.registers[operands.dest].set_trit(0, cmp_trit);
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_shf(&mut self, operands: operands::RRR) {
-        let offset = self.registers[operands.rhs].as_i64() as isize;
-        self.shift(operands.lhs, offset);
-        self.copy_shift_result(operands.dest);
+        let offset = self.registers[operands.rhs].try_into_int().unwrap();
+        self.shift(operands.dest, operands.lhs, offset);
     }
 
     fn op_add(&mut self, operands: operands::RRR) {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
-        let carry = {
-            let lhs = &self.registers[operands.lhs];
-            let rhs = &self.registers[operands.rhs];
-            ternary::slice::add(tmp_dest, lhs, rhs, trit::ZERO)
-        };
+        let lhs = self.registers[operands.lhs];
+        let rhs = self.registers[operands.rhs];
+        let (sum, carry) = lhs.add_with_carry(rhs, _0);
 
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
-        self.registers[registers::HI].clear();
+        self.registers[operands.dest] = sum;
+        self.registers[registers::HI] = T24::ZERO;
         self.registers[registers::HI].set_trit(0, carry);
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_mul(&mut self, operands: operands::RR) {
-        let i = WORD_LEN;
-        let j = WORD_LEN * 2;
+        let lhs: T48 = self.registers[operands.lhs].resize();
+        let rhs: T48 = self.registers[operands.rhs].resize();
+        let product = lhs * rhs;
 
-        let tmp_dest = &mut self.scratch_space[0..j];
+        let product_trytes = product.into_trytes();
+        let lo_trytes = product_trytes[..T24::SIZE].try_into().unwrap();
+        let hi_trytes = product_trytes[T24::SIZE..].try_into().unwrap();
 
-        {
-            let lhs = &self.registers[operands.lhs];
-            let rhs = &self.registers[operands.rhs];
-            ternary::slice::multiply(tmp_dest, lhs, rhs);
-        }
-
-        self.registers[registers::LO].copy_from_slice(&tmp_dest[0..i]);
-        self.registers[registers::HI].copy_from_slice(&tmp_dest[i..j]);
+        self.registers[registers::LO] = T24::from_trytes(lo_trytes);
+        self.registers[registers::HI] = T24::from_trytes(hi_trytes);
     }
 
     #[allow(clippy::unused_self)]
@@ -167,57 +159,51 @@ impl<'a> VM<'a> {
     }
 
     fn op_andi(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::slice::and);
+        self.simple_rri(operands, |r, i| r + i.resize());
     }
 
     fn op_ori(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::slice::or);
+        self.simple_rri(operands, |r, i| r | i.resize());
     }
 
     fn op_tmuli(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::slice::tmul);
+        self.simple_rri(operands, |r, i| r.tmul(i.resize()));
     }
 
     fn op_tcmpi(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, ternary::slice::tcmp);
+        self.simple_rri(operands, |r, i| r.tcmp(i.resize()));
     }
 
     fn op_shfi(&mut self, operands: operands::RRI) {
-        let offset = operands.immediate.as_i64() as isize;
-        self.shift(operands.src, offset);
-        self.copy_shift_result(operands.dest);
+        let offset = operands.immediate.try_into_int().unwrap();
+        self.shift(operands.dest, operands.src, offset);
     }
 
     fn op_addi(&mut self, operands: operands::RRI) {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
-        let carry = {
-            let lhs = &self.registers[operands.src];
-            let rhs = &operands.immediate;
-            ternary::slice::add(tmp_dest, lhs, rhs, trit::ZERO)
-        };
+        let lhs = self.registers[operands.src];
+        let rhs = operands.immediate.resize();
+        let (sum, carry) = lhs.add_with_carry(rhs, _0);
 
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
-        self.registers[registers::HI].clear();
+        self.registers[operands.dest] = sum;
+        self.registers[registers::HI] = T24::ZERO;
         self.registers[registers::HI].set_trit(0, carry);
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_lui(&mut self, operands: operands::RI) {
-        let i = HALF_LEN;
-        let j = HALF_LEN * 2;
+        let src_trytes = operands.immediate.into_trytes();
+        let dest_trytes = &mut self.registers[operands.dest].into_trytes();
+        dest_trytes[0] = Tryte::ZERO;
+        dest_trytes[1] = Tryte::ZERO;
+        dest_trytes[2] = src_trytes[0];
+        dest_trytes[3] = src_trytes[1];
 
-        {
-            let dest = &mut self.registers[operands.dest];
-            dest[0..i].clear();
-            dest[i..j].copy_from_slice(&operands.immediate);
-        }
-
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_lsr(&mut self, operands: operands::LoadSystem) {
         self.copy_register(operands.src, operands.dest);
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_ssr(&mut self, operands: operands::StoreSystem) {
@@ -225,72 +211,72 @@ impl<'a> VM<'a> {
     }
 
     fn op_lt(&mut self, operands: operands::Memory) {
-        self.load(operands, TRYTE_LEN);
+        self.load::<1>(operands);
     }
 
     fn op_lh(&mut self, operands: operands::Memory) {
-        self.load(operands, HALF_LEN);
+        self.load::<2>(operands);
     }
 
     fn op_lw(&mut self, operands: operands::Memory) {
-        self.load(operands, WORD_LEN);
+        self.load::<4>(operands);
     }
 
     fn op_st(&mut self, operands: operands::Memory) {
-        self.store(operands, TRYTE_LEN);
+        self.store::<1>(operands);
     }
 
     fn op_sh(&mut self, operands: operands::Memory) {
-        self.store(operands, HALF_LEN);
+        self.store::<2>(operands);
     }
 
     fn op_sw(&mut self, operands: operands::Memory) {
-        self.store(operands, WORD_LEN);
+        self.store::<4>(operands);
     }
 
     fn op_bt(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, 0);
     }
 
     fn op_b0(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, 0);
     }
 
     fn op_b1(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, 0, offset);
     }
 
     fn op_bt0(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, offset, 0);
     }
 
     fn op_bt1(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, offset);
     }
 
     fn op_b01(&mut self, operands: operands::Branch) {
         let selector = self.get_branch_selector(operands);
-        let offset = self.get_branch_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, offset);
     }
 
     fn op_jmp(&mut self, operands: operands::Jump) {
-        let offset = self.get_jump_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.jump_relative(offset);
     }
 
     fn op_call(&mut self, operands: operands::Jump) {
-        let offset = self.get_jump_offset(operands);
+        let offset = operands.offset.try_into_int().unwrap();
         self.save_pc();
         self.jump_relative(offset);
     }
@@ -318,153 +304,113 @@ impl<'a> VM<'a> {
 
     fn simple_rrr<F>(&mut self, operands: operands::RRR, f: F)
     where
-        F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
+        F: Fn(T24, T24) -> T24,
     {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+        let value = {
+            let lhs = self.registers[operands.lhs];
+            let rhs = self.registers[operands.rhs];
+            f(lhs, rhs)
+        };
 
-        {
-            let lhs = &self.registers[operands.lhs];
-            let rhs = &self.registers[operands.rhs];
-            f(tmp_dest, lhs, rhs);
-        }
-
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
-        self.registers[registers::ZERO].clear();
+        self.registers[operands.dest] = value;
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn simple_rri<F>(&mut self, operands: operands::RRI, f: F)
     where
-        F: Fn(&mut [Tryte], &[Tryte], &[Tryte]),
+        F: Fn(T24, T12) -> T24,
     {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
+        let value = {
+            let lhs = self.registers[operands.src];
+            let rhs = operands.immediate;
+            f(lhs, rhs)
+        };
 
-        {
-            let lhs = &self.registers[operands.src];
-            let rhs = &operands.immediate;
-            f(tmp_dest, lhs, rhs);
-        }
-
-        self.registers[operands.dest].copy_from_slice(tmp_dest);
-        self.registers[registers::ZERO].clear();
+        self.registers[operands.dest] = value;
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn shift(&mut self, src_reg: StandardRegister, offset: isize) {
-        let tmp_dest = &mut self.scratch_space[0..(WORD_LEN * 3)];
-        let src = &self.registers[src_reg];
-        ternary::slice::shift(tmp_dest, src, offset);
-    }
+    fn shift(&mut self, dest_reg: StandardRegister, src_reg: StandardRegister, offset: isize) {
+        let value_trytes = [Tryte::ZERO; 12];
+        let mid_trytes: &mut [Tryte; 4] = &mut value_trytes[4..8].try_into().unwrap();
+        *mid_trytes = self.registers[src_reg].into_trytes();
 
-    fn copy_shift_result(&mut self, dest_reg: StandardRegister) {
-        let i = WORD_LEN;
-        let j = WORD_LEN * 2;
-        let k = WORD_LEN * 3;
+        let value = TInt::<12>::from_trytes(value_trytes);
+        let shifted = value.shf(offset);
+
+        let value_trytes = value.into_trytes();
 
         {
-            let src = &mut self.scratch_space[0..i];
-            self.registers[registers::LO].copy_from_slice(src);
+            let src_trytes = value_trytes[..4].try_into().unwrap();
+            let src = T24::from_trytes(src_trytes);
+            self.registers[registers::LO] = src;
         }
 
         {
-            let src = &mut self.scratch_space[i..j];
-            self.registers[dest_reg].copy_from_slice(src);
+            let src_trytes = value_trytes[4..8].try_into().unwrap();
+            let src = T24::from_trytes(src_trytes);
+            self.registers[dest_reg] = src;
         }
 
         {
-            let src = &mut self.scratch_space[j..k];
-            self.registers[registers::HI].copy_from_slice(src);
+            let src_trytes = value_trytes[8..].try_into().unwrap();
+            let src = T24::from_trytes(src_trytes);
+            self.registers[registers::HI] = src;
         }
 
-        self.registers[registers::ZERO].clear();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn copy_register<R: Register, S: Register>(&mut self, src_reg: R, dest_reg: S) {
-        let tmp_dest = &mut self.scratch_space[0..WORD_LEN];
-
-        {
-            let src = &self.registers[src_reg];
-            tmp_dest.copy_from_slice(src);
-        }
-
-        self.registers[dest_reg].copy_from_slice(tmp_dest);
+        self.registers[dest_reg] = self.registers[src_reg];
     }
 
     fn get_branch_selector(&self, operands: operands::Branch) -> Trit {
         let raw_index = TRIT4_TO_I8[operands.index as usize];
         let i = (raw_index + TRIT3_POS_OFFSET) as usize;
-        let src = &self.registers[operands.src];
-        src.get_trit(i)
+        let src = self.registers[operands.src];
+        src.trit(i)
     }
 
     fn branch(&mut self, selector: Trit, offset_t: i32, offset_0: i32, offset_1: i32) {
-        self.jump_table[trit::NEG.into_index()] = offset_t;
-        self.jump_table[trit::ZERO.into_index()] = offset_0;
-        self.jump_table[trit::POS.into_index()] = offset_1;
+        self.jump_table[_T.into_index()] = offset_t;
+        self.jump_table[_0.into_index()] = offset_0;
+        self.jump_table[_1.into_index()] = offset_1;
 
         let i = selector.into_index();
         let offset = self.jump_table[i];
         self.jump_relative(offset);
     }
 
-    fn load(&mut self, operands: operands::Memory, len: usize) {
+    fn load<const N: usize>(&mut self, operands: operands::Memory) {
         let i = self.get_memory_addr(operands);
-        let j = i + len;
-        let src = &self.memory[i..j];
-
-        {
-            let dest_reg = &mut self.registers[operands.dest];
-            dest_reg.clear();
-            let dest = &mut dest_reg[..len];
-            dest.copy_from_slice(src);
-        }
-
-        self.registers[registers::ZERO].clear();
+        let src_trytes = self.memory[i..][..N].try_into().unwrap();
+        let src = TInt::<N>::from_trytes(src_trytes);
+        self.registers[operands.dest] = src.resize();
+        self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn store(&mut self, operands: operands::Memory, len: usize) {
+    fn store<const N: usize>(&mut self, operands: operands::Memory) {
         let i = self.get_memory_addr(operands);
-        let j = i + len;
-
-        let dest = &mut self.memory[i..j];
-        let src = &self.registers[operands.src][..len];
-        dest.copy_from_slice(src);
+        let src = self.registers[operands.src];
+        let dest: &mut [Tryte; N] = (&mut self.memory[i..][..N]).try_into().unwrap();
+        *dest = src.resize().into_trytes();
     }
 
     fn get_memory_addr(&mut self, operands: operands::Memory) -> usize {
-        let base_addr = {
-            let addr_src = &self.registers[operands.dest];
-            addr_src.as_i64() as u32
-        };
-        let offset = self.get_memory_offset(operands);
-        (base_addr as i32 + offset) as usize
-    }
-
-    fn get_jump_offset(&mut self, operands: operands::Jump) -> i32 {
-        let offset_dest = &mut self.scratch_space[0..WORD_LEN];
-        offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.as_i64() as i32
-    }
-
-    fn get_branch_offset(&mut self, operands: operands::Branch) -> i32 {
-        let offset_dest = &mut self.scratch_space[0..HALF_LEN];
-        offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.as_i64() as i32
-    }
-
-    fn get_memory_offset(&mut self, operands: operands::Memory) -> i32 {
-        let offset_dest = &mut self.scratch_space[0..HALF_LEN];
-        offset_dest.copy_from_slice(&operands.offset[..]);
-        offset_dest.as_i64() as i32
+        let base_addr: i32 = self.registers[operands.dest].try_into_int().unwrap();
+        let offset: i32 = operands.offset.try_into_int().unwrap();
+        (base_addr + offset) as usize
     }
 
     fn get_r_offset(&self, operands: operands::R) -> i32 {
         let offset_src = &self.registers[operands.src];
-        offset_src.as_i64() as i32
+        offset_src.try_into_int().unwrap()
     }
 
     fn save_pc(&mut self) {
-        self.registers[registers::RA]
-            .read_i64(self.pc as i64)
-            .expect("ternary arithmetic error");
+        let value = T24::try_from_int(self.pc as i64).expect("ternary arithmetic error");
+        self.registers[registers::RA] = value;
     }
 
     fn jump_relative(&mut self, offset: i32) {

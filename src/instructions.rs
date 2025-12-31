@@ -1,4 +1,4 @@
-use ternary::Tryte;
+use ternary::{T24, Tryte};
 
 use crate::error::Result;
 use crate::opcodes;
@@ -47,8 +47,9 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn from_word(word: &[Tryte]) -> Result<Self> {
-        let opcode_trit4 = word[0].low_trit4();
+    pub fn from_word(word: T24) -> Result<Self> {
+        let word_trytes = word.into_trytes();
+        let opcode_trit4 = word_trytes[0].low_trit4();
         let opcode = Opcode::from_trit4(opcode_trit4)?;
         match opcode {
             opcodes::AND => operands::RRR::from_word(word).map(Instruction::And),
@@ -98,13 +99,11 @@ mod tests {
 
     use super::*;
     use crate::registers;
-    use ternary::constants::WORD_LEN;
-    use ternary::test_constants::{TRYTE4_1073741824, TRYTE4_4096, TRYTE_6};
-    use ternary::trit;
-    use ternary::tryte;
-    use ternary::Ternary;
+    use ternary::test_constants::{T24_4096, T24_1073741824, TRYTE_6, TRYTE_NEG278};
+    use ternary::trit::{self, _1};
+    use ternary::{T12, tryte};
 
-    const TRYTE2_4096: [Tryte; 2] = [TRYTE4_4096[2], TRYTE4_4096[3]];
+    pub const T12_4096: T12 = T24_4096.resize();
 
     #[test]
     #[allow(clippy::too_many_lines)]
@@ -192,7 +191,7 @@ mod tests {
             Instruction::Andi(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "0100")).unwrap()
         );
@@ -200,7 +199,7 @@ mod tests {
             Instruction::Ori(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "0101")).unwrap()
         );
@@ -208,7 +207,7 @@ mod tests {
             Instruction::Tmuli(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "011T")).unwrap()
         );
@@ -216,7 +215,7 @@ mod tests {
             Instruction::Tcmpi(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "0110")).unwrap()
         );
@@ -224,7 +223,7 @@ mod tests {
             Instruction::Shfi(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "0111")).unwrap()
         );
@@ -232,14 +231,14 @@ mod tests {
             Instruction::Addi(operands::RRI {
                 dest: registers::T0,
                 src: registers::T1,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1TTT")).unwrap()
         );
         assert_eq!(
             Instruction::Lui(operands::RI {
                 dest: registers::T0,
-                immediate: TRYTE2_4096,
+                immediate: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "0000", "1T00", "1TT0")).unwrap()
         );
@@ -261,7 +260,7 @@ mod tests {
             Instruction::Lt(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T00")).unwrap()
         );
@@ -269,7 +268,7 @@ mod tests {
             Instruction::Lh(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T01")).unwrap()
         );
@@ -277,7 +276,7 @@ mod tests {
             Instruction::Lw(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T1T")).unwrap()
         );
@@ -285,7 +284,7 @@ mod tests {
             Instruction::St(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T10")).unwrap()
         );
@@ -293,7 +292,7 @@ mod tests {
             Instruction::Sh(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T11")).unwrap()
         );
@@ -301,7 +300,7 @@ mod tests {
             Instruction::Sw(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
-                offset: TRYTE2_4096,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "10TT")).unwrap()
         );
@@ -309,8 +308,8 @@ mod tests {
             Instruction::BT(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T0")).unwrap()
         );
@@ -318,8 +317,8 @@ mod tests {
             Instruction::B0(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T1")).unwrap()
         );
@@ -327,8 +326,8 @@ mod tests {
             Instruction::B1(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "100T")).unwrap()
         );
@@ -336,8 +335,8 @@ mod tests {
             Instruction::BT0(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1000")).unwrap()
         );
@@ -345,8 +344,8 @@ mod tests {
             Instruction::BT1(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1001")).unwrap()
         );
@@ -354,20 +353,20 @@ mod tests {
             Instruction::B01(operands::Branch {
                 src: registers::T0,
                 index: TRYTE_6.low_trit4(),
-                hint: trit::POS,
-                offset: TRYTE2_4096,
+                hint: _1,
+                offset: T12_4096,
             }),
             instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "101T")).unwrap()
         );
         assert_eq!(
             Instruction::Jmp(operands::Jump {
-                offset: TRYTE4_1073741824,
+                offset: T24_1073741824,
             }),
             instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1010")).unwrap()
         );
         assert_eq!(
             Instruction::Call(operands::Jump {
-                offset: TRYTE4_1073741824,
+                offset: T24_1073741824,
             }),
             instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1011")).unwrap()
         );
@@ -395,8 +394,7 @@ mod tests {
     }
 
     fn instruction_from_trit_str(s: &str) -> Result<Instruction> {
-        let mut word = [tryte::ZERO; WORD_LEN];
-        word.read_trits(s)?;
-        Instruction::from_word(&word)
+        let word = T24::from_trit_str(s)?;
+        Instruction::from_word(word)
     }
 }

@@ -1,8 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use ternary::constants::WORD_LEN;
-use ternary::tables::TRIT4_TO_I8;
-use ternary::{tryte, Tryte};
+use ternary::{T24, Tryte, tables::TRIT4_TO_I8, tryte};
 
 use crate::error::{Error, Result};
 
@@ -16,12 +14,6 @@ pub trait Register: Sized {
         }
 
         Ok(Self::from_index(i as usize))
-    }
-
-    fn into_indices(self) -> (usize, usize) {
-        let i = self.into_index();
-        let j = i + WORD_LEN;
-        (i, j)
     }
 
     fn from_index(i: usize) -> Self;
@@ -89,16 +81,15 @@ impl Register for SystemRegister {
 }
 
 const TOTAL_COUNT: usize = StandardRegister::COUNT + SystemRegister::COUNT;
-const TOTAL_LEN: usize = TOTAL_COUNT * WORD_LEN;
 
 pub struct RegisterFile {
-    registers: [Tryte; TOTAL_LEN],
+    registers: [T24; TOTAL_COUNT],
 }
 
 impl RegisterFile {
     pub fn new() -> Self {
         Self {
-            registers: [tryte::ZERO; TOTAL_LEN],
+            registers: [T24::ZERO; TOTAL_COUNT],
         }
     }
 }
@@ -110,18 +101,18 @@ impl Default for RegisterFile {
 }
 
 impl<R: Register> Index<R> for RegisterFile {
-    type Output = [Tryte];
+    type Output = T24;
 
     fn index(&self, register: R) -> &Self::Output {
-        let (i, j) = register.into_indices();
-        &self.registers[i..j]
+        let i = register.into_index();
+        &self.registers[i]
     }
 }
 
 impl<R: Register> IndexMut<R> for RegisterFile {
     fn index_mut(&mut self, register: R) -> &mut Self::Output {
-        let (i, j) = register.into_indices();
-        &mut self.registers[i..j]
+        let i = register.into_index();
+        &mut self.registers[i]
     }
 }
 
@@ -131,30 +122,30 @@ mod tests {
 
     #[test]
     fn standard_register_from_trit4() {
-        assert_eq!(Ok(ZERO), StandardRegister::from_trit4(0b00_00_00_00));
-        assert_eq!(Ok(LO), StandardRegister::from_trit4(0b00_00_00_01));
-        assert_eq!(Ok(HI), StandardRegister::from_trit4(0b00_00_01_11));
-        assert_eq!(Ok(SP), StandardRegister::from_trit4(0b00_00_01_00));
-        assert_eq!(Ok(FP), StandardRegister::from_trit4(0b00_00_01_01));
-        assert_eq!(Ok(RA), StandardRegister::from_trit4(0b00_01_11_11));
-        assert_eq!(Ok(A0), StandardRegister::from_trit4(0b00_01_11_00));
-        assert_eq!(Ok(A1), StandardRegister::from_trit4(0b00_01_11_01));
-        assert_eq!(Ok(A2), StandardRegister::from_trit4(0b00_01_00_11));
-        assert_eq!(Ok(A3), StandardRegister::from_trit4(0b00_01_00_00));
-        assert_eq!(Ok(A4), StandardRegister::from_trit4(0b00_01_00_01));
-        assert_eq!(Ok(A5), StandardRegister::from_trit4(0b00_01_01_11));
-        assert_eq!(Ok(S0), StandardRegister::from_trit4(0b00_01_01_00));
-        assert_eq!(Ok(S1), StandardRegister::from_trit4(0b00_01_01_01));
-        assert_eq!(Ok(S2), StandardRegister::from_trit4(0b01_11_11_11));
-        assert_eq!(Ok(S3), StandardRegister::from_trit4(0b01_11_11_00));
-        assert_eq!(Ok(S4), StandardRegister::from_trit4(0b01_11_11_01));
-        assert_eq!(Ok(S5), StandardRegister::from_trit4(0b01_11_00_11));
-        assert_eq!(Ok(T0), StandardRegister::from_trit4(0b01_11_00_00));
-        assert_eq!(Ok(T1), StandardRegister::from_trit4(0b01_11_00_01));
-        assert_eq!(Ok(T2), StandardRegister::from_trit4(0b01_11_01_11));
-        assert_eq!(Ok(T3), StandardRegister::from_trit4(0b01_11_01_00));
-        assert_eq!(Ok(T4), StandardRegister::from_trit4(0b01_11_01_01));
-        assert_eq!(Ok(T5), StandardRegister::from_trit4(0b01_00_11_11));
+        assert_eq!(ZERO, StandardRegister::from_trit4(0b00_00_00_00).unwrap());
+        assert_eq!(LO, StandardRegister::from_trit4(0b00_00_00_01).unwrap());
+        assert_eq!(HI, StandardRegister::from_trit4(0b00_00_01_11).unwrap());
+        assert_eq!(SP, StandardRegister::from_trit4(0b00_00_01_00).unwrap());
+        assert_eq!(FP, StandardRegister::from_trit4(0b00_00_01_01).unwrap());
+        assert_eq!(RA, StandardRegister::from_trit4(0b00_01_11_11).unwrap());
+        assert_eq!(A0, StandardRegister::from_trit4(0b00_01_11_00).unwrap());
+        assert_eq!(A1, StandardRegister::from_trit4(0b00_01_11_01).unwrap());
+        assert_eq!(A2, StandardRegister::from_trit4(0b00_01_00_11).unwrap());
+        assert_eq!(A3, StandardRegister::from_trit4(0b00_01_00_00).unwrap());
+        assert_eq!(A4, StandardRegister::from_trit4(0b00_01_00_01).unwrap());
+        assert_eq!(A5, StandardRegister::from_trit4(0b00_01_01_11).unwrap());
+        assert_eq!(S0, StandardRegister::from_trit4(0b00_01_01_00).unwrap());
+        assert_eq!(S1, StandardRegister::from_trit4(0b00_01_01_01).unwrap());
+        assert_eq!(S2, StandardRegister::from_trit4(0b01_11_11_11).unwrap());
+        assert_eq!(S3, StandardRegister::from_trit4(0b01_11_11_00).unwrap());
+        assert_eq!(S4, StandardRegister::from_trit4(0b01_11_11_01).unwrap());
+        assert_eq!(S5, StandardRegister::from_trit4(0b01_11_00_11).unwrap());
+        assert_eq!(T0, StandardRegister::from_trit4(0b01_11_00_00).unwrap());
+        assert_eq!(T1, StandardRegister::from_trit4(0b01_11_00_01).unwrap());
+        assert_eq!(T2, StandardRegister::from_trit4(0b01_11_01_11).unwrap());
+        assert_eq!(T3, StandardRegister::from_trit4(0b01_11_01_00).unwrap());
+        assert_eq!(T4, StandardRegister::from_trit4(0b01_11_01_01).unwrap());
+        assert_eq!(T5, StandardRegister::from_trit4(0b01_00_11_11).unwrap());
 
         assert!(StandardRegister::from_trit4(0b00_00_00_11).is_err());
         assert!(StandardRegister::from_trit4(0b01_00_11_00).is_err());
@@ -162,10 +153,10 @@ mod tests {
 
     #[test]
     fn system_register_from_trit4() {
-        assert_eq!(Ok(EHA), SystemRegister::from_trit4(0b00_00_00_00));
-        assert_eq!(Ok(ERA), SystemRegister::from_trit4(0b00_00_00_01));
-        assert_eq!(Ok(EC), SystemRegister::from_trit4(0b00_00_01_11));
-        assert_eq!(Ok(ED), SystemRegister::from_trit4(0b00_00_01_00));
+        assert_eq!(EHA, SystemRegister::from_trit4(0b00_00_00_00).unwrap());
+        assert_eq!(ERA, SystemRegister::from_trit4(0b00_00_00_01).unwrap());
+        assert_eq!(EC, SystemRegister::from_trit4(0b00_00_01_11).unwrap());
+        assert_eq!(ED, SystemRegister::from_trit4(0b00_00_01_00).unwrap());
 
         assert!(SystemRegister::from_trit4(0b00_00_00_11).is_err());
         assert!(SystemRegister::from_trit4(0b00_00_01_01).is_err());
