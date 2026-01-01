@@ -96,8 +96,7 @@ impl Operand for RI {
         let dest = StandardRegister::from_trit4(trit4_dest)?;
 
         let word_trytes = word.into_trytes();
-        let immediate_trytes = word_trytes[2..].try_into().unwrap();
-        let immediate = T12::from_trytes(immediate_trytes);
+        let immediate = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self { dest, immediate })
     }
@@ -119,8 +118,7 @@ impl Operand for RRI {
         let src = StandardRegister::from_trit4(trit4_src)?;
 
         let word_trytes = word.into_trytes();
-        let immediate_trytes = word_trytes[2..].try_into().unwrap();
-        let immediate = T12::from_trytes(immediate_trytes);
+        let immediate = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self {
             dest,
@@ -146,8 +144,7 @@ impl Operand for Memory {
         let src = StandardRegister::from_trit4(trit4_src)?;
 
         let word_trytes = word.into_trytes();
-        let offset_trytes = word_trytes[2..].try_into().unwrap();
-        let offset = T12::from_trytes(offset_trytes);
+        let offset = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self { dest, src, offset })
     }
@@ -171,8 +168,7 @@ impl Operand for Branch {
         let hint = Trit::from_trit4(trit4_index_hint >> 6)?;
 
         let word_trytes = word.into_trytes();
-        let offset_trytes = word_trytes[2..].try_into().unwrap();
-        let offset = T12::from_trytes(offset_trytes);
+        let offset = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self {
             src,
@@ -243,16 +239,5 @@ fn trit4_triple_from_half(half: T12) -> (u8, u8, u8) {
 }
 
 fn addr_from_word(word: T24) -> T24 {
-    let trytes = word.into_trytes();
-    let trits_0 = trytes[0].into_raw();
-    let trits_1 = trytes[1].into_raw();
-    let trits_2 = trytes[2].into_raw();
-    let trits_3 = trytes[3].into_raw();
-
-    let addr_tryte_0 = Tryte::from_raw((trits_0 >> 8 | trits_1 << 4) & tryte::BITMASK);
-    let addr_tryte_1 = Tryte::from_raw((trits_1 >> 8 | trits_2 << 4) & tryte::BITMASK);
-    let addr_tryte_2 = Tryte::from_raw((trits_2 >> 8 | trits_3 << 4) & tryte::BITMASK);
-    let addr_tryte_3 = Tryte::from_raw((trits_3 >> 8) & tryte::BITMASK);
-
-    T24::from_trytes([addr_tryte_0, addr_tryte_1, addr_tryte_2, addr_tryte_3])
+    word >> 4
 }

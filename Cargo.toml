@@ -1,8 +1,8 @@
 [package]
 name = "btm"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jordan Danford <jordandanford@gmail.com>"]
 edition = "2024"
 
 [dependencies]
-ternary = { version = "0.4", git = "https://github.com/jdanford/ternary", tag = "v0.4" }
+ternary = { version = "0.5", git = "https://github.com/jdanford/ternary", tag = "v0.5" }

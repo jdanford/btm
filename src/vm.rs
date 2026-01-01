@@ -16,8 +16,6 @@ pub struct VM<'a> {
     running: bool,
     pc: u32,
     registers: RegisterFile,
-    // scratch_space: [T24; SCRATCH_SPACE_LEN],
-    jump_table: [i32; 4],
     memory: &'a mut [Tryte],
 }
 
@@ -27,8 +25,6 @@ impl<'a> VM<'a> {
             running: false,
             pc: 0,
             registers: RegisterFile::new(),
-            // scratch_space: [T24::ZERO; SCRATCH_SPACE_LEN],
-            jump_table: [0; 4],
             memory,
         }
     }
@@ -90,11 +86,9 @@ impl<'a> VM<'a> {
 
     fn next_instruction(&mut self) -> Result<Instruction> {
         let i = self.pc as usize;
-        let j = i + T24::SIZE;
-        self.pc += T24::SIZE as u32;
+        self.pc += 4;
 
-        let word_trytes = self.memory[i..][..4].try_into().unwrap();
-        let word = T24::from_trytes(word_trytes);
+        let word = T24::try_from_slice(&self.memory[i..][..4]).unwrap();
         Instruction::from_word(word)
     }
 
@@ -146,11 +140,11 @@ impl<'a> VM<'a> {
         let product = lhs * rhs;
 
         let product_trytes = product.into_trytes();
-        let lo_trytes = product_trytes[..T24::SIZE].try_into().unwrap();
-        let hi_trytes = product_trytes[T24::SIZE..].try_into().unwrap();
+        let lo = T24::try_from_slice(&product_trytes[..4]).unwrap();
+        let hi = T24::try_from_slice(&product_trytes[4..]).unwrap();
 
-        self.registers[registers::LO] = T24::from_trytes(lo_trytes);
-        self.registers[registers::HI] = T24::from_trytes(hi_trytes);
+        self.registers[registers::LO] = lo;
+        self.registers[registers::HI] = hi;
     }
 
     #[allow(clippy::unused_self)]
@@ -191,13 +185,7 @@ impl<'a> VM<'a> {
     }
 
     fn op_lui(&mut self, operands: operands::RI) {
-        let src_trytes = operands.immediate.into_trytes();
-        let dest_trytes = &mut self.registers[operands.dest].into_trytes();
-        dest_trytes[0] = Tryte::ZERO;
-        dest_trytes[1] = Tryte::ZERO;
-        dest_trytes[2] = src_trytes[0];
-        dest_trytes[3] = src_trytes[1];
-
+        self.registers[operands.dest] = operands.immediate.resize() << 12;
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
@@ -306,11 +294,9 @@ impl<'a> VM<'a> {
     where
         F: Fn(T24, T24) -> T24,
     {
-        let value = {
-            let lhs = self.registers[operands.lhs];
-            let rhs = self.registers[operands.rhs];
-            f(lhs, rhs)
-        };
+        let lhs = self.registers[operands.lhs];
+        let rhs = self.registers[operands.rhs];
+        let value = f(lhs, rhs);
 
         self.registers[operands.dest] = value;
         self.registers[registers::ZERO] = T24::ZERO;
@@ -320,11 +306,9 @@ impl<'a> VM<'a> {
     where
         F: Fn(T24, T12) -> T24,
     {
-        let value = {
-            let lhs = self.registers[operands.src];
-            let rhs = operands.immediate;
-            f(lhs, rhs)
-        };
+        let lhs = self.registers[operands.src];
+        let rhs = operands.immediate;
+        let value = f(lhs, rhs);
 
         self.registers[operands.dest] = value;
         self.registers[registers::ZERO] = T24::ZERO;
@@ -339,25 +323,13 @@ impl<'a> VM<'a> {
         let shifted = value.shf(offset);
 
         let value_trytes = value.into_trytes();
+        let lo = T24::try_from_slice(&value_trytes[..4]).unwrap();
+        let mid = T24::try_from_slice(&value_trytes[4..8]).unwrap();
+        let hi = T24::try_from_slice(&value_trytes[8..]).unwrap();
 
-        {
-            let src_trytes = value_trytes[..4].try_into().unwrap();
-            let src = T24::from_trytes(src_trytes);
-            self.registers[registers::LO] = src;
-        }
-
-        {
-            let src_trytes = value_trytes[4..8].try_into().unwrap();
-            let src = T24::from_trytes(src_trytes);
-            self.registers[dest_reg] = src;
-        }
-
-        {
-            let src_trytes = value_trytes[8..].try_into().unwrap();
-            let src = T24::from_trytes(src_trytes);
-            self.registers[registers::HI] = src;
-        }
-
+        self.registers[registers::LO] = lo;
+        self.registers[dest_reg] = mid;
+        self.registers[registers::HI] = hi;
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
@@ -366,33 +338,35 @@ impl<'a> VM<'a> {
     }
 
     fn get_branch_selector(&self, operands: operands::Branch) -> Trit {
+        let src = self.registers[operands.src];
         let raw_index = TRIT4_TO_I8[operands.index as usize];
         let i = (raw_index + TRIT3_POS_OFFSET) as usize;
-        let src = self.registers[operands.src];
         src.trit(i)
     }
 
     fn branch(&mut self, selector: Trit, offset_t: i32, offset_0: i32, offset_1: i32) {
-        self.jump_table[_T.into_index()] = offset_t;
-        self.jump_table[_0.into_index()] = offset_0;
-        self.jump_table[_1.into_index()] = offset_1;
+        let mut jump_table = [0; 4];
+        jump_table[_T.into_index()] = offset_t;
+        jump_table[_0.into_index()] = offset_0;
+        jump_table[_1.into_index()] = offset_1;
 
         let i = selector.into_index();
-        let offset = self.jump_table[i];
+        let offset = jump_table[i];
         self.jump_relative(offset);
     }
 
     fn load<const N: usize>(&mut self, operands: operands::Memory) {
         let i = self.get_memory_addr(operands);
-        let src_trytes = self.memory[i..][..N].try_into().unwrap();
-        let src = TInt::<N>::from_trytes(src_trytes);
+        let src = TInt::<N>::try_from_slice(&self.memory[i..][..N]).unwrap();
+
         self.registers[operands.dest] = src.resize();
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn store<const N: usize>(&mut self, operands: operands::Memory) {
-        let i = self.get_memory_addr(operands);
         let src = self.registers[operands.src];
+        let i = self.get_memory_addr(operands);
+
         let dest: &mut [Tryte; N] = (&mut self.memory[i..][..N]).try_into().unwrap();
         *dest = src.resize().into_trytes();
     }
@@ -409,7 +383,7 @@ impl<'a> VM<'a> {
     }
 
     fn save_pc(&mut self) {
-        let value = T24::try_from_int(self.pc as i64).expect("ternary arithmetic error");
+        let value = T24::try_from_int(self.pc as i64).unwrap();
         self.registers[registers::RA] = value;
     }
 

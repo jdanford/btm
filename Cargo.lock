@@ -10,7 +10,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "btm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ternary",
 ]
@@ -51,8 +51,8 @@ dependencies = [
 
 [[package]]
 name = "ternary"
-version = "0.4.0"
-source = "git+https://github.com/jdanford/ternary?tag=v0.4#3d6eee4a904df106e6800ef3a64982bdd0bb637c"
+version = "0.5.0"
+source = "git+https://github.com/jdanford/ternary?tag=v0.5#ccf446c02a28aec9959290c55fcf802b290d2096"
 dependencies = [
  "byteorder",
  "num-bigint",
