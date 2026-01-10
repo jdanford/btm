@@ -51,8 +51,8 @@ dependencies = [
 
 [[package]]
 name = "ternary"
-version = "0.5.0"
-source = "git+https://github.com/jdanford/ternary?tag=v0.5#ccf446c02a28aec9959290c55fcf802b290d2096"
+version = "0.6.0"
+source = "git+https://github.com/jdanford/ternary?tag=v0.6#2296718c4ece00ad3fbfd61227be5c04883ddaec"
 dependencies = [
  "byteorder",
  "num-bigint",

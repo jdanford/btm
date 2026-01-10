@@ -1,120 +1,127 @@
-use std::ops::{Index, IndexMut};
+#![feature(generic_const_exprs)]
+
+use std::{
+    marker::PhantomData,
+    ops::{Index, IndexMut},
+};
 
 use ternary::{T24, Tryte, tables::TRIT4_TO_I8, tryte};
 
 use crate::error::{Error, Result};
 
-pub trait Register: Sized {
+pub trait RegisterType {
     const COUNT: usize;
-
-    fn from_trit4(trit4: u8) -> Result<Self> {
-        let i = TRIT4_TO_I8[trit4 as usize] as u8;
-        if i as usize >= Self::COUNT {
-            return Err(Error::InvalidRegister(i));
-        }
-
-        Ok(Self::from_index(i as usize))
-    }
-
-    fn from_index(i: usize) -> Self;
-    fn into_index(self) -> usize;
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct StandardRegister(usize);
+pub struct Standard;
 
-pub const ZERO: StandardRegister = StandardRegister(0);
-pub const LO: StandardRegister = StandardRegister(1);
-pub const HI: StandardRegister = StandardRegister(2);
-pub const SP: StandardRegister = StandardRegister(3);
-pub const FP: StandardRegister = StandardRegister(4);
-pub const RA: StandardRegister = StandardRegister(5);
-pub const A0: StandardRegister = StandardRegister(6);
-pub const A1: StandardRegister = StandardRegister(7);
-pub const A2: StandardRegister = StandardRegister(8);
-pub const A3: StandardRegister = StandardRegister(9);
-pub const A4: StandardRegister = StandardRegister(10);
-pub const A5: StandardRegister = StandardRegister(11);
-pub const S0: StandardRegister = StandardRegister(12);
-pub const S1: StandardRegister = StandardRegister(13);
-pub const S2: StandardRegister = StandardRegister(14);
-pub const S3: StandardRegister = StandardRegister(15);
-pub const S4: StandardRegister = StandardRegister(16);
-pub const S5: StandardRegister = StandardRegister(17);
-pub const T0: StandardRegister = StandardRegister(18);
-pub const T1: StandardRegister = StandardRegister(19);
-pub const T2: StandardRegister = StandardRegister(20);
-pub const T3: StandardRegister = StandardRegister(21);
-pub const T4: StandardRegister = StandardRegister(22);
-pub const T5: StandardRegister = StandardRegister(23);
-
-impl Register for StandardRegister {
+impl RegisterType for Standard {
     const COUNT: usize = 24;
+}
 
-    fn from_index(i: usize) -> Self {
-        StandardRegister(i)
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct System;
+
+impl RegisterType for System {
+    const COUNT: usize = 4;
+}
+
+pub type StandardRegister = Register<Standard>;
+pub type SystemRegister = Register<System>;
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Register<R: RegisterType>(usize, PhantomData<R>);
+
+impl<R: RegisterType> Register<R> {
+    pub const fn from_trit4(trit4: u8) -> Result<Self> {
+        let index_u8 = TRIT4_TO_I8[trit4 as usize] as u8;
+        let index = index_u8 as usize;
+
+        if index >= R::COUNT {
+            return Err(Error::InvalidRegister(index_u8));
+        }
+
+        Ok(Self::from_index(index))
     }
 
-    fn into_index(self) -> usize {
+    pub const fn from_index(i: usize) -> Self {
+        Register(i, PhantomData)
+    }
+
+    pub const fn into_index(self) -> usize {
         self.0
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct SystemRegister(usize);
+pub struct RegisterFile<R: RegisterType, const N: usize>([T24; N], PhantomData<R>);
 
-pub const EHA: SystemRegister = SystemRegister(0);
-pub const ERA: SystemRegister = SystemRegister(1);
-pub const EC: SystemRegister = SystemRegister(2);
-pub const ED: SystemRegister = SystemRegister(3);
-
-impl Register for SystemRegister {
-    const COUNT: usize = 4;
-
-    fn from_index(i: usize) -> Self {
-        SystemRegister(i)
-    }
-
-    fn into_index(self) -> usize {
-        self.0 + StandardRegister::COUNT
-    }
-}
-
-const TOTAL_COUNT: usize = StandardRegister::COUNT + SystemRegister::COUNT;
-
-pub struct RegisterFile {
-    registers: [T24; TOTAL_COUNT],
-}
-
-impl RegisterFile {
+impl<R: RegisterType, const N: usize> RegisterFile<R, N> {
     pub fn new() -> Self {
-        Self {
-            registers: [T24::ZERO; TOTAL_COUNT],
-        }
+        Self([T24::ZERO; N], PhantomData)
     }
 }
 
-impl Default for RegisterFile {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub type StandardRegisters = RegisterFile<Standard, { Standard::COUNT }>;
 
-impl<R: Register> Index<R> for RegisterFile {
+impl Index<StandardRegister> for StandardRegisters {
     type Output = T24;
 
-    fn index(&self, register: R) -> &Self::Output {
-        let i = register.into_index();
-        &self.registers[i]
+    fn index(&self, register: StandardRegister) -> &Self::Output {
+        &self.0[register.into_index()]
     }
 }
 
-impl<R: Register> IndexMut<R> for RegisterFile {
-    fn index_mut(&mut self, register: R) -> &mut Self::Output {
-        let i = register.into_index();
-        &mut self.registers[i]
+impl IndexMut<StandardRegister> for StandardRegisters {
+    fn index_mut(&mut self, register: StandardRegister) -> &mut Self::Output {
+        &mut self.0[register.into_index()]
     }
 }
+
+pub type SystemRegisters = RegisterFile<System, { System::COUNT }>;
+
+impl Index<SystemRegister> for SystemRegisters {
+    type Output = T24;
+
+    fn index(&self, register: SystemRegister) -> &Self::Output {
+        &self.0[register.into_index()]
+    }
+}
+
+impl IndexMut<SystemRegister> for SystemRegisters {
+    fn index_mut(&mut self, register: SystemRegister) -> &mut Self::Output {
+        &mut self.0[register.into_index()]
+    }
+}
+
+pub const ZERO: StandardRegister = StandardRegister::from_index(0);
+pub const LO: StandardRegister = StandardRegister::from_index(1);
+pub const HI: StandardRegister = StandardRegister::from_index(2);
+pub const SP: StandardRegister = StandardRegister::from_index(3);
+pub const FP: StandardRegister = StandardRegister::from_index(4);
+pub const RA: StandardRegister = StandardRegister::from_index(5);
+pub const A0: StandardRegister = StandardRegister::from_index(6);
+pub const A1: StandardRegister = StandardRegister::from_index(7);
+pub const A2: StandardRegister = StandardRegister::from_index(8);
+pub const A3: StandardRegister = StandardRegister::from_index(9);
+pub const A4: StandardRegister = StandardRegister::from_index(10);
+pub const A5: StandardRegister = StandardRegister::from_index(11);
+pub const S0: StandardRegister = StandardRegister::from_index(12);
+pub const S1: StandardRegister = StandardRegister::from_index(13);
+pub const S2: StandardRegister = StandardRegister::from_index(14);
+pub const S3: StandardRegister = StandardRegister::from_index(15);
+pub const S4: StandardRegister = StandardRegister::from_index(16);
+pub const S5: StandardRegister = StandardRegister::from_index(17);
+pub const T0: StandardRegister = StandardRegister::from_index(18);
+pub const T1: StandardRegister = StandardRegister::from_index(19);
+pub const T2: StandardRegister = StandardRegister::from_index(20);
+pub const T3: StandardRegister = StandardRegister::from_index(21);
+pub const T4: StandardRegister = StandardRegister::from_index(22);
+pub const T5: StandardRegister = StandardRegister::from_index(23);
+pub const EHA: SystemRegister = SystemRegister::from_index(0);
+pub const ERA: SystemRegister = SystemRegister::from_index(1);
+pub const EC: SystemRegister = SystemRegister::from_index(2);
+pub const ED: SystemRegister = SystemRegister::from_index(3);
 
 #[cfg(test)]
 mod tests {

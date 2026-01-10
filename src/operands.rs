@@ -37,7 +37,7 @@ pub struct R {
 impl Operand for R {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
-        let (_, trit4_src, _) = trit4_triple_from_half(half);
+        let (_, trit4_src, _) = half.trit4_triple();
         let src = StandardRegister::from_trit4(trit4_src)?;
         Ok(Self { src })
     }
@@ -52,7 +52,7 @@ pub struct RR {
 impl Operand for RR {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
-        let (_, trit4_lhs, trit4_rhs) = trit4_triple_from_half(half);
+        let (_, trit4_lhs, trit4_rhs) = half.trit4_triple();
 
         let lhs = StandardRegister::from_trit4(trit4_lhs)?;
         let rhs = StandardRegister::from_trit4(trit4_rhs)?;
@@ -71,7 +71,7 @@ pub struct RRR {
 impl Operand for RRR {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
-        let (_, trit4_dest, trit4_lhs) = trit4_triple_from_half(half);
+        let (_, trit4_dest, trit4_lhs) = half.trit4_triple();
         let trit4_rhs = word.into_trytes()[2].low_trit4();
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
@@ -90,14 +90,9 @@ pub struct RI {
 
 impl Operand for RI {
     fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_dest, _) = trit4_triple_from_half(half);
-
+        let (lo, immediate) = word.t12_pair();
+        let (_, trit4_dest, _) = lo.trit4_triple();
         let dest = StandardRegister::from_trit4(trit4_dest)?;
-
-        let word_trytes = word.into_trytes();
-        let immediate = T12::try_from_slice(&word_trytes[2..]).unwrap();
-
         Ok(Self { dest, immediate })
     }
 }
@@ -111,14 +106,11 @@ pub struct RRI {
 
 impl Operand for RRI {
     fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
+        let (lo, immediate) = word.t12_pair();
+        let (_, trit4_dest, trit4_src) = lo.trit4_triple();
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
-
-        let word_trytes = word.into_trytes();
-        let immediate = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self {
             dest,
@@ -137,14 +129,11 @@ pub struct Memory {
 
 impl Operand for Memory {
     fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
+        let (lo, offset) = word.t12_pair();
+        let (_, trit4_dest, trit4_src) = lo.trit4_triple();
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
-
-        let word_trytes = word.into_trytes();
-        let offset = T12::try_from_slice(&word_trytes[2..]).unwrap();
 
         Ok(Self { dest, src, offset })
     }
@@ -160,15 +149,12 @@ pub struct Branch {
 
 impl Operand for Branch {
     fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_src, trit4_index_hint) = trit4_triple_from_half(half);
+        let (lo, offset) = word.t12_pair();
+        let (_, trit4_src, trit4_index_and_hint) = lo.trit4_triple();
 
         let src = StandardRegister::from_trit4(trit4_src)?;
-        let index = (trit4_index_hint & tryte::HYTE_BITMASK);
-        let hint = Trit::from_trit4(trit4_index_hint >> 6)?;
-
-        let word_trytes = word.into_trytes();
-        let offset = T12::try_from_slice(&word_trytes[2..]).unwrap();
+        let index = (trit4_index_and_hint & tryte::HYTE_BITMASK);
+        let hint = Trit::try_from_trit4(trit4_index_and_hint >> 6)?;
 
         Ok(Self {
             src,
@@ -186,7 +172,7 @@ pub struct Jump {
 
 impl Operand for Jump {
     fn from_word(word: T24) -> Result<Self> {
-        let offset = addr_from_word(word);
+        let offset = word >> 4;
         Ok(Self { offset })
     }
 }
@@ -200,7 +186,7 @@ pub struct LoadSystem {
 impl Operand for LoadSystem {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
-        let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
+        let (_, trit4_dest, trit4_src) = half.trit4_triple();
 
         let dest = StandardRegister::from_trit4(trit4_dest)?;
         let src = SystemRegister::from_trit4(trit4_src)?;
@@ -218,26 +204,11 @@ pub struct StoreSystem {
 impl Operand for StoreSystem {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
-        let (_, trit4_dest, trit4_src) = trit4_triple_from_half(half);
+        let (_, trit4_dest, trit4_src) = half.trit4_triple();
 
         let dest = SystemRegister::from_trit4(trit4_dest)?;
         let src = StandardRegister::from_trit4(trit4_src)?;
 
         Ok(Self { dest, src })
     }
-}
-
-fn trit4_triple_from_half(half: T12) -> (u8, u8, u8) {
-    let trytes = half.into_trytes();
-    let trit6_a = trytes[0].into_raw();
-    let trit6_b = trytes[1].into_raw();
-
-    let trit4_a = trit6_a as u8;
-    let trit4_b = ((trit6_a >> 8) | (trit6_b << 4)) as u8;
-    let trit4_c = (trit6_b >> 4) as u8;
-    (trit4_a, trit4_b, trit4_c)
-}
-
-fn addr_from_word(word: T24) -> T24 {
-    word >> 4
 }

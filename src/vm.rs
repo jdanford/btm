@@ -6,8 +6,7 @@ use ternary::{T12, T24, T48, TInt, Trit, Tryte, tables::TRIT4_TO_I8, trit, tryte
 use crate::error::Result;
 use crate::instructions::Instruction;
 use crate::operands;
-use crate::registers;
-use crate::registers::{Register, RegisterFile, StandardRegister};
+use crate::registers::{self, RegisterFile, RegisterType, Standard, StandardRegister, StandardRegisters, System, SystemRegister, SystemRegisters};
 
 const SCRATCH_SPACE_LEN: usize = 4;
 const TRIT3_POS_OFFSET: i8 = 13;
@@ -15,7 +14,8 @@ const TRIT3_POS_OFFSET: i8 = 13;
 pub struct VM<'a> {
     running: bool,
     pc: u32,
-    registers: RegisterFile,
+    registers: StandardRegisters,
+    system_registers: SystemRegisters,
     memory: &'a mut [Tryte],
 }
 
@@ -24,7 +24,8 @@ impl<'a> VM<'a> {
         VM {
             running: false,
             pc: 0,
-            registers: RegisterFile::new(),
+            registers: StandardRegisters::new(),
+            system_registers: SystemRegisters::new(),
             memory,
         }
     }
@@ -88,7 +89,7 @@ impl<'a> VM<'a> {
         let i = self.pc as usize;
         self.pc += 4;
 
-        let word = T24::try_from_slice(&self.memory[i..][..4]).unwrap();
+        let word = T24::try_from(&self.memory[i..][..4]).unwrap();
         Instruction::from_word(word)
     }
 
@@ -140,16 +141,20 @@ impl<'a> VM<'a> {
         let product = lhs * rhs;
 
         let product_trytes = product.into_trytes();
-        let lo = T24::try_from_slice(&product_trytes[..4]).unwrap();
-        let hi = T24::try_from_slice(&product_trytes[4..]).unwrap();
+        let lo = T24::try_from(&product_trytes[..4]).unwrap();
+        let hi = T24::try_from(&product_trytes[4..]).unwrap();
 
         self.registers[registers::LO] = lo;
         self.registers[registers::HI] = hi;
     }
 
-    #[allow(clippy::unused_self)]
     fn op_div(&mut self, operands: operands::RR) {
-        unimplemented!()
+        let lhs = self.registers[operands.lhs];
+        let rhs = self.registers[operands.rhs];
+        let (quotient, remainder) = lhs.div_rem(rhs);
+
+        self.registers[registers::HI] = quotient;
+        self.registers[registers::LO] = remainder;
     }
 
     fn op_andi(&mut self, operands: operands::RRI) {
@@ -190,12 +195,12 @@ impl<'a> VM<'a> {
     }
 
     fn op_lsr(&mut self, operands: operands::LoadSystem) {
-        self.copy_register(operands.src, operands.dest);
+        self.registers[operands.dest] = self.system_registers[operands.src];
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn op_ssr(&mut self, operands: operands::StoreSystem) {
-        self.copy_register(operands.src, operands.dest);
+        self.system_registers[operands.dest] = self.registers[operands.src];
     }
 
     fn op_lt(&mut self, operands: operands::Memory) {
@@ -323,18 +328,14 @@ impl<'a> VM<'a> {
         let shifted = value.shf(offset);
 
         let value_trytes = value.into_trytes();
-        let lo = T24::try_from_slice(&value_trytes[..4]).unwrap();
-        let mid = T24::try_from_slice(&value_trytes[4..8]).unwrap();
-        let hi = T24::try_from_slice(&value_trytes[8..]).unwrap();
+        let lo = T24::try_from(&value_trytes[..4]).unwrap();
+        let mid = T24::try_from(&value_trytes[4..8]).unwrap();
+        let hi = T24::try_from(&value_trytes[8..]).unwrap();
 
         self.registers[registers::LO] = lo;
         self.registers[dest_reg] = mid;
         self.registers[registers::HI] = hi;
         self.registers[registers::ZERO] = T24::ZERO;
-    }
-
-    fn copy_register<R: Register, S: Register>(&mut self, src_reg: R, dest_reg: S) {
-        self.registers[dest_reg] = self.registers[src_reg];
     }
 
     fn get_branch_selector(&self, operands: operands::Branch) -> Trit {
@@ -357,7 +358,7 @@ impl<'a> VM<'a> {
 
     fn load<const N: usize>(&mut self, operands: operands::Memory) {
         let i = self.get_memory_addr(operands);
-        let src = TInt::<N>::try_from_slice(&self.memory[i..][..N]).unwrap();
+        let src = TInt::<N>::try_from(&self.memory[i..][..N]).unwrap();
 
         self.registers[operands.dest] = src.resize();
         self.registers[registers::ZERO] = T24::ZERO;

@@ -5,4 +5,4 @@ authors = ["Jordan Danford <jordandanford@gmail.com>"]
 edition = "2024"
 
 [dependencies]
-ternary = { version = "0.5", git = "https://github.com/jdanford/ternary", tag = "v0.5" }
+ternary = { version = "0.6", git = "https://github.com/jdanford/ternary", tag = "v0.6" }

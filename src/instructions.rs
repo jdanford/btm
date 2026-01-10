@@ -1,10 +1,8 @@
 use ternary::{T24, Tryte};
 
 use crate::error::Result;
-use crate::opcodes;
-use crate::opcodes::Opcode;
-use crate::operands;
-use crate::operands::Operand;
+use crate::opcodes::{self, Opcode};
+use crate::operands::{self, Operand};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Instruction {
