@@ -22,8 +22,6 @@ pub enum Instruction {
     Shfi(operands::RRI),
     Addi(operands::RRI),
     Lui(operands::RI),
-    Lsr(operands::LoadSystem),
-    Ssr(operands::StoreSystem),
     Lt(operands::Memory),
     Lh(operands::Memory),
     Lw(operands::Memory),
@@ -66,8 +64,6 @@ impl Instruction {
             opcodes::SHFI => operands::RRI::from_word(word).map(Instruction::Shfi),
             opcodes::ADDI => operands::RRI::from_word(word).map(Instruction::Addi),
             opcodes::LUI => operands::RI::from_word(word).map(Instruction::Lui),
-            opcodes::LSR => operands::LoadSystem::from_word(word).map(Instruction::Lsr),
-            opcodes::SSR => operands::StoreSystem::from_word(word).map(Instruction::Ssr),
             opcodes::LT => operands::Memory::from_word(word).map(Instruction::Lt),
             opcodes::LH => operands::Memory::from_word(word).map(Instruction::Lh),
             opcodes::LW => operands::Memory::from_word(word).map(Instruction::Lw),
@@ -241,26 +237,12 @@ mod tests {
             instruction_from_trit_str(concat!("0001T0T0TT01", "0000", "1T00", "1TT0")).unwrap()
         );
         assert_eq!(
-            Instruction::Lsr(operands::LoadSystem {
-                dest: registers::T0,
-                src: registers::ED,
-            }),
-            instruction_from_trit_str(concat!("000000000000", "0010", "1T00", "1TT1")).unwrap()
-        );
-        assert_eq!(
-            Instruction::Ssr(operands::StoreSystem {
-                dest: registers::ED,
-                src: registers::T0,
-            }),
-            instruction_from_trit_str(concat!("000000000000", "1T00", "0010", "1T0T")).unwrap()
-        );
-        assert_eq!(
             Instruction::Lt(operands::Memory {
                 dest: registers::T0,
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T00")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1TT1")).unwrap()
         );
         assert_eq!(
             Instruction::Lh(operands::Memory {
@@ -268,7 +250,7 @@ mod tests {
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T01")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T0T")).unwrap()
         );
         assert_eq!(
             Instruction::Lw(operands::Memory {
@@ -276,7 +258,7 @@ mod tests {
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T1T")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T00")).unwrap()
         );
         assert_eq!(
             Instruction::St(operands::Memory {
@@ -284,7 +266,7 @@ mod tests {
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T10")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T01")).unwrap()
         );
         assert_eq!(
             Instruction::Sh(operands::Memory {
@@ -292,7 +274,7 @@ mod tests {
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T11")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T1T")).unwrap()
         );
         assert_eq!(
             Instruction::Sw(operands::Memory {
@@ -300,7 +282,7 @@ mod tests {
                 src: registers::T1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "10TT")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1T01", "1T00", "1T10")).unwrap()
         );
         assert_eq!(
             Instruction::BT(operands::Branch {
@@ -309,7 +291,7 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T0")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1T11")).unwrap()
         );
         assert_eq!(
             Instruction::B0(operands::Branch {
@@ -318,7 +300,7 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T1")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10TT")).unwrap()
         );
         assert_eq!(
             Instruction::B1(operands::Branch {
@@ -327,7 +309,7 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "100T")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T0")).unwrap()
         );
         assert_eq!(
             Instruction::BT0(operands::Branch {
@@ -336,7 +318,7 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1000")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "10T1")).unwrap()
         );
         assert_eq!(
             Instruction::BT1(operands::Branch {
@@ -345,7 +327,7 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1001")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "100T")).unwrap()
         );
         assert_eq!(
             Instruction::B01(operands::Branch {
@@ -354,35 +336,35 @@ mod tests {
                 hint: _1,
                 offset: T12_4096,
             }),
-            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "101T")).unwrap()
+            instruction_from_trit_str(concat!("0001T0T0TT01", "1", "1T0", "1T00", "1000")).unwrap()
         );
         assert_eq!(
             Instruction::Jmp(operands::Jump {
                 offset: T24_1073741824,
             }),
-            instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1010")).unwrap()
+            instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1001")).unwrap()
         );
         assert_eq!(
             Instruction::Call(operands::Jump {
                 offset: T24_1073741824,
             }),
-            instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1011")).unwrap()
+            instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "101T")).unwrap()
         );
         assert_eq!(
             Instruction::Jmpr(operands::R { src: registers::T0 }),
-            instruction_from_trit_str(concat!("0000000000000000", "1T00", "11TT")).unwrap()
+            instruction_from_trit_str(concat!("0000000000000000", "1T00", "1010")).unwrap()
         );
         assert_eq!(
             Instruction::Callr(operands::R { src: registers::T0 }),
-            instruction_from_trit_str(concat!("0000000000000000", "1T00", "11T0")).unwrap()
+            instruction_from_trit_str(concat!("0000000000000000", "1T00", "1011")).unwrap()
         );
         assert_eq!(
             Instruction::Syscall,
-            instruction_from_trit_str(concat!("00000000000000000000", "11T1")).unwrap()
+            instruction_from_trit_str(concat!("00000000000000000000", "11TT")).unwrap()
         );
         assert_eq!(
             Instruction::Break,
-            instruction_from_trit_str(concat!("00000000000000000000", "110T")).unwrap()
+            instruction_from_trit_str(concat!("00000000000000000000", "11T0")).unwrap()
         );
 
         assert!(instruction_from_trit_str(concat!("00000000000000000000", "000T")).is_err());

@@ -1,6 +1,6 @@
 [package]
 name = "btm"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Jordan Danford <jordandanford@gmail.com>"]
 edition = "2024"
 

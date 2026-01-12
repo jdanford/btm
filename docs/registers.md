@@ -8,9 +8,3 @@
 - $sp
 - $fp
 - $ra
-
-## System (4)
-- $eha (exception handler address)
-- $era (exception return address)
-- $ec (exception code)
-- $ed (exception data)

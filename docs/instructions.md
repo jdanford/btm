@@ -3,8 +3,6 @@
 - `{mul, div} $a, $b`
 - `{andi, ori, tmuli, tcmpi, shfi, addi} $dest, $src, immediate (12)`
 - `lui $dest, immediate (12)`
-- `lsr $dest, $sys`
-- `ssr $sys, $src`
 - `{lt, lh, lw} $dest, $src, offset (12)`
 - `{st, sh, sw} $dest, $src, offset (12)`
 - `{bT, b0, b1, bT0, bT1, b01} $src, index (3), hint (1), offset (12)`

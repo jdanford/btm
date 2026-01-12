@@ -1,8 +1,0 @@
-- [x] Tryte operations
-- [x] Word operations
-- [x] Main VM loop
-- [ ] Encoding / decoding
-- [ ] Basic assembler parsing
-- [ ] Assembler declarations
-- [ ] Memory mapping
-- [ ] Exception handling

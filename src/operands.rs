@@ -3,7 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use ternary::{T12, T24, Trit, Tryte, tryte};
 
 use crate::error::{Error, Result};
-use crate::registers::{Register, StandardRegister, SystemRegister};
+use crate::registers::Register;
 
 const TRIT4_BITMASK: u16 = 0b00_00_00_00_11_11_11_11;
 
@@ -31,22 +31,22 @@ impl Operand for Empty {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct R {
-    pub src: StandardRegister,
+    pub src: Register,
 }
 
 impl Operand for R {
     fn from_word(word: T24) -> Result<Self> {
         let half = word.resize();
         let (_, trit4_src, _) = half.trit4_triple();
-        let src = StandardRegister::from_trit4(trit4_src)?;
+        let src = Register::from_trit4(trit4_src)?;
         Ok(Self { src })
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RR {
-    pub lhs: StandardRegister,
-    pub rhs: StandardRegister,
+    pub lhs: Register,
+    pub rhs: Register,
 }
 
 impl Operand for RR {
@@ -54,8 +54,8 @@ impl Operand for RR {
         let half = word.resize();
         let (_, trit4_lhs, trit4_rhs) = half.trit4_triple();
 
-        let lhs = StandardRegister::from_trit4(trit4_lhs)?;
-        let rhs = StandardRegister::from_trit4(trit4_rhs)?;
+        let lhs = Register::from_trit4(trit4_lhs)?;
+        let rhs = Register::from_trit4(trit4_rhs)?;
 
         Ok(Self { lhs, rhs })
     }
@@ -63,9 +63,9 @@ impl Operand for RR {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RRR {
-    pub dest: StandardRegister,
-    pub lhs: StandardRegister,
-    pub rhs: StandardRegister,
+    pub dest: Register,
+    pub lhs: Register,
+    pub rhs: Register,
 }
 
 impl Operand for RRR {
@@ -74,9 +74,9 @@ impl Operand for RRR {
         let (_, trit4_dest, trit4_lhs) = half.trit4_triple();
         let trit4_rhs = word.into_trytes()[2].low_trit4();
 
-        let dest = StandardRegister::from_trit4(trit4_dest)?;
-        let lhs = StandardRegister::from_trit4(trit4_lhs)?;
-        let rhs = StandardRegister::from_trit4(trit4_rhs)?;
+        let dest = Register::from_trit4(trit4_dest)?;
+        let lhs = Register::from_trit4(trit4_lhs)?;
+        let rhs = Register::from_trit4(trit4_rhs)?;
 
         Ok(Self { dest, lhs, rhs })
     }
@@ -84,7 +84,7 @@ impl Operand for RRR {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RI {
-    pub dest: StandardRegister,
+    pub dest: Register,
     pub immediate: T12,
 }
 
@@ -92,15 +92,15 @@ impl Operand for RI {
     fn from_word(word: T24) -> Result<Self> {
         let (lo, immediate) = word.t12_pair();
         let (_, trit4_dest, _) = lo.trit4_triple();
-        let dest = StandardRegister::from_trit4(trit4_dest)?;
+        let dest = Register::from_trit4(trit4_dest)?;
         Ok(Self { dest, immediate })
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RRI {
-    pub dest: StandardRegister,
-    pub src: StandardRegister,
+    pub dest: Register,
+    pub src: Register,
     pub immediate: T12,
 }
 
@@ -109,8 +109,8 @@ impl Operand for RRI {
         let (lo, immediate) = word.t12_pair();
         let (_, trit4_dest, trit4_src) = lo.trit4_triple();
 
-        let dest = StandardRegister::from_trit4(trit4_dest)?;
-        let src = StandardRegister::from_trit4(trit4_src)?;
+        let dest = Register::from_trit4(trit4_dest)?;
+        let src = Register::from_trit4(trit4_src)?;
 
         Ok(Self {
             dest,
@@ -122,8 +122,8 @@ impl Operand for RRI {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Memory {
-    pub dest: StandardRegister,
-    pub src: StandardRegister,
+    pub dest: Register,
+    pub src: Register,
     pub offset: T12,
 }
 
@@ -132,8 +132,8 @@ impl Operand for Memory {
         let (lo, offset) = word.t12_pair();
         let (_, trit4_dest, trit4_src) = lo.trit4_triple();
 
-        let dest = StandardRegister::from_trit4(trit4_dest)?;
-        let src = StandardRegister::from_trit4(trit4_src)?;
+        let dest = Register::from_trit4(trit4_dest)?;
+        let src = Register::from_trit4(trit4_src)?;
 
         Ok(Self { dest, src, offset })
     }
@@ -141,7 +141,7 @@ impl Operand for Memory {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Branch {
-    pub src: StandardRegister,
+    pub src: Register,
     pub index: u8,
     pub hint: Trit,
     pub offset: T12,
@@ -152,7 +152,7 @@ impl Operand for Branch {
         let (lo, offset) = word.t12_pair();
         let (_, trit4_src, trit4_index_and_hint) = lo.trit4_triple();
 
-        let src = StandardRegister::from_trit4(trit4_src)?;
+        let src = Register::from_trit4(trit4_src)?;
         let index = (trit4_index_and_hint & tryte::HYTE_BITMASK);
         let hint = Trit::try_from_trit4(trit4_index_and_hint >> 6)?;
 
@@ -174,41 +174,5 @@ impl Operand for Jump {
     fn from_word(word: T24) -> Result<Self> {
         let offset = word >> 4;
         Ok(Self { offset })
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct LoadSystem {
-    pub dest: StandardRegister,
-    pub src: SystemRegister,
-}
-
-impl Operand for LoadSystem {
-    fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_dest, trit4_src) = half.trit4_triple();
-
-        let dest = StandardRegister::from_trit4(trit4_dest)?;
-        let src = SystemRegister::from_trit4(trit4_src)?;
-
-        Ok(Self { dest, src })
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct StoreSystem {
-    pub dest: SystemRegister,
-    pub src: StandardRegister,
-}
-
-impl Operand for StoreSystem {
-    fn from_word(word: T24) -> Result<Self> {
-        let half = word.resize();
-        let (_, trit4_dest, trit4_src) = half.trit4_triple();
-
-        let dest = SystemRegister::from_trit4(trit4_dest)?;
-        let src = StandardRegister::from_trit4(trit4_src)?;
-
-        Ok(Self { dest, src })
     }
 }

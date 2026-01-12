@@ -6,7 +6,7 @@ use ternary::{T12, T24, T48, TInt, Trit, Tryte, tables::TRIT4_TO_I8, trit, tryte
 use crate::error::Result;
 use crate::instructions::Instruction;
 use crate::operands;
-use crate::registers::{self, RegisterFile, RegisterType, Standard, StandardRegister, StandardRegisters, System, SystemRegister, SystemRegisters};
+use crate::registers::{self, Register, Registers};
 
 const SCRATCH_SPACE_LEN: usize = 4;
 const TRIT3_POS_OFFSET: i8 = 13;
@@ -14,8 +14,7 @@ const TRIT3_POS_OFFSET: i8 = 13;
 pub struct VM<'a> {
     running: bool,
     pc: u32,
-    registers: StandardRegisters,
-    system_registers: SystemRegisters,
+    registers: Registers,
     memory: &'a mut [Tryte],
 }
 
@@ -24,8 +23,7 @@ impl<'a> VM<'a> {
         VM {
             running: false,
             pc: 0,
-            registers: StandardRegisters::new(),
-            system_registers: SystemRegisters::new(),
+            registers: Registers::new(),
             memory,
         }
     }
@@ -60,8 +58,6 @@ impl<'a> VM<'a> {
             Instruction::Shfi(operands) => self.op_shfi(operands),
             Instruction::Addi(operands) => self.op_addi(operands),
             Instruction::Lui(operands) => self.op_lui(operands),
-            Instruction::Lsr(operands) => self.op_lsr(operands),
-            Instruction::Ssr(operands) => self.op_ssr(operands),
             Instruction::Lt(operands) => self.op_lt(operands),
             Instruction::Lh(operands) => self.op_lh(operands),
             Instruction::Lw(operands) => self.op_lw(operands),
@@ -194,15 +190,6 @@ impl<'a> VM<'a> {
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn op_lsr(&mut self, operands: operands::LoadSystem) {
-        self.registers[operands.dest] = self.system_registers[operands.src];
-        self.registers[registers::ZERO] = T24::ZERO;
-    }
-
-    fn op_ssr(&mut self, operands: operands::StoreSystem) {
-        self.system_registers[operands.dest] = self.registers[operands.src];
-    }
-
     fn op_lt(&mut self, operands: operands::Memory) {
         self.load::<1>(operands);
     }
@@ -319,28 +306,16 @@ impl<'a> VM<'a> {
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn shift(&mut self, dest_reg: StandardRegister, src_reg: StandardRegister, offset: isize) {
-        let value_trytes = [Tryte::ZERO; 12];
-        let mid_trytes: &mut [Tryte; 4] = &mut value_trytes[4..8].try_into().unwrap();
-        *mid_trytes = self.registers[src_reg].into_trytes();
-
-        let value = TInt::<12>::from_trytes(value_trytes);
-        let shifted = value.shf(offset);
-
-        let value_trytes = value.into_trytes();
-        let lo = T24::try_from(&value_trytes[..4]).unwrap();
-        let mid = T24::try_from(&value_trytes[4..8]).unwrap();
-        let hi = T24::try_from(&value_trytes[8..]).unwrap();
-
-        self.registers[registers::LO] = lo;
-        self.registers[dest_reg] = mid;
-        self.registers[registers::HI] = hi;
+    fn shift(&mut self, dest_reg: Register, src_reg: Register, offset: isize) {
+        let value = self.registers[src_reg];
+        self.registers[dest_reg] = value.shf(offset);
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
     fn get_branch_selector(&self, operands: operands::Branch) -> Trit {
         let src = self.registers[operands.src];
         let raw_index = TRIT4_TO_I8[operands.index as usize];
+        #[allow(clippy::cast_sign_loss)]
         let i = (raw_index + TRIT3_POS_OFFSET) as usize;
         src.trit(i)
     }
@@ -358,7 +333,8 @@ impl<'a> VM<'a> {
 
     fn load<const N: usize>(&mut self, operands: operands::Memory) {
         let i = self.get_memory_addr(operands);
-        let src = TInt::<N>::try_from(&self.memory[i..][..N]).unwrap();
+        let trytes = &self.memory[i..][..N];
+        let src = TInt::<N>::try_from(trytes).unwrap();
 
         self.registers[operands.dest] = src.resize();
         self.registers[registers::ZERO] = T24::ZERO;
@@ -367,11 +343,13 @@ impl<'a> VM<'a> {
     fn store<const N: usize>(&mut self, operands: operands::Memory) {
         let src = self.registers[operands.src];
         let i = self.get_memory_addr(operands);
+        let trytes = &mut self.memory[i..][..N];
 
-        let dest: &mut [Tryte; N] = (&mut self.memory[i..][..N]).try_into().unwrap();
+        let dest: &mut [Tryte; N] = trytes.try_into().unwrap();
         *dest = src.resize().into_trytes();
     }
 
+    #[allow(clippy::cast_sign_loss)]
     fn get_memory_addr(&mut self, operands: operands::Memory) -> usize {
         let base_addr: i32 = self.registers[operands.dest].try_into_int().unwrap();
         let offset: i32 = operands.offset.try_into_int().unwrap();
@@ -384,7 +362,7 @@ impl<'a> VM<'a> {
     }
 
     fn save_pc(&mut self) {
-        let value = T24::try_from_int(self.pc as i64).unwrap();
+        let value = T24::try_from_int(i64::from(self.pc)).unwrap();
         self.registers[registers::RA] = value;
     }
 
@@ -392,6 +370,7 @@ impl<'a> VM<'a> {
         self.pc = self.relative_pc(offset);
     }
 
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     fn relative_pc(&self, offset: i32) -> u32 {
         (self.pc as i32 + offset) as u32
     }
