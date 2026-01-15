@@ -1,7 +1,9 @@
 #[derive(Debug)]
 pub enum Error {
-    InvalidOpcode(u8),
-    InvalidRegister(u8),
+    InvalidOpcode(i8),
+    InvalidRegister(i8),
+    InvalidAddress(i64),
+    InvalidAlignment(i64, usize),
     Ternary(ternary::Error),
 }
 

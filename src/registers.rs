@@ -1,13 +1,13 @@
 #![feature(generic_const_exprs)]
 
-use std::ops::{Index, IndexMut};
+use std::ops::{Index, IndexMut, RangeInclusive};
 
 use ternary::{T24, Tryte, tables::TRIT4_TO_I8, tryte};
 
 use crate::error::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Register(usize);
+pub struct Register(i8);
 
 pub const ZERO: Register = Register(0);
 pub const LO: Register = Register(1);
@@ -34,23 +34,26 @@ pub const T3: Register = Register(21);
 pub const T4: Register = Register(22);
 pub const T5: Register = Register(23);
 
-const REGISTER_COUNT: usize = 24;
+const VALID_REGISTER_RANGE: RangeInclusive<i8> = ZERO.0..=T5.0;
+#[allow(clippy::cast_sign_loss)]
+const REGISTER_COUNT: usize =
+    (*VALID_REGISTER_RANGE.end() - *VALID_REGISTER_RANGE.start()) as usize;
 
 impl Register {
     #[allow(clippy::cast_sign_loss)]
-    pub const fn from_trit4(trit4: u8) -> Result<Self> {
-        let index_u8 = TRIT4_TO_I8[trit4 as usize] as u8;
-        let index = index_u8 as usize;
+    pub fn from_trit4(trit4: u8) -> Result<Self> {
+        let index = TRIT4_TO_I8[trit4 as usize];
 
-        if index >= REGISTER_COUNT {
-            return Err(Error::InvalidRegister(index_u8));
+        if !VALID_REGISTER_RANGE.contains(&index) {
+            return Err(Error::InvalidRegister(index));
         }
 
         Ok(Self(index))
     }
 
-    pub const fn into_index(self) -> usize {
-        self.0
+    #[allow(clippy::cast_sign_loss)]
+    pub fn into_index(self) -> usize {
+        (self.0 - VALID_REGISTER_RANGE.start()) as usize
     }
 }
 

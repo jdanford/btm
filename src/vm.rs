@@ -1,25 +1,26 @@
-use std::ops::{BitAnd, BitOr, Mul};
+use std::ops::{BitAnd, BitOr, Mul, Range, RangeInclusive};
 
 use ternary::trit::{_0, _1, _T};
 use ternary::{T12, T24, T48, TInt, Trit, Tryte, tables::TRIT4_TO_I8, trit, tryte};
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::instructions::Instruction;
 use crate::operands;
 use crate::registers::{self, Register, Registers};
 
-const SCRATCH_SPACE_LEN: usize = 4;
 const TRIT3_POS_OFFSET: i8 = 13;
 
-pub struct VM<'a> {
+pub struct VM {
     running: bool,
-    pc: u32,
+    pc: i64,
     registers: Registers,
-    memory: &'a mut [Tryte],
+    memory: Vec<Tryte>,
 }
 
-impl<'a> VM<'a> {
-    pub fn new(memory: &'a mut [Tryte]) -> Self {
+impl VM {
+    pub fn new(memory_size: usize) -> Self {
+        let memory = vec![Tryte::ZERO; memory_size];
+
         VM {
             running: false,
             pc: 0,
@@ -28,7 +29,7 @@ impl<'a> VM<'a> {
         }
     }
 
-    pub fn run(&mut self, pc: u32) -> Result<()> {
+    pub fn run(&mut self, pc: i64) -> Result<()> {
         self.pc = pc;
         self.running = true;
 
@@ -82,10 +83,11 @@ impl<'a> VM<'a> {
     }
 
     fn next_instruction(&mut self) -> Result<Instruction> {
-        let i = self.pc as usize;
+        let range = self.memory_range(self.pc, 4, 4)?;
         self.pc += 4;
 
-        let word = T24::try_from(&self.memory[i..][..4]).unwrap();
+        let trytes = &self.memory[range];
+        let word = T24::try_from(trytes).unwrap();
         Instruction::from_word(word)
     }
 
@@ -215,61 +217,57 @@ impl<'a> VM<'a> {
     }
 
     fn op_bt(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, 0);
     }
 
     fn op_b0(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, 0);
     }
 
     fn op_b1(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, 0, offset);
     }
 
     fn op_bt0(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, offset, 0);
     }
 
     fn op_bt1(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, offset);
     }
 
     fn op_b01(&mut self, operands: operands::Branch) {
-        let selector = self.get_branch_selector(operands);
+        let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, offset);
     }
 
     fn op_jmp(&mut self, operands: operands::Jump) {
-        let offset = operands.offset.try_into_int().unwrap();
-        self.jump_relative(offset);
+        self.pc = operands.addr.into_i64();
     }
 
     fn op_call(&mut self, operands: operands::Jump) {
-        let offset = operands.offset.try_into_int().unwrap();
         self.save_pc();
-        self.jump_relative(offset);
+        self.pc = operands.addr.into_i64();
     }
 
     fn op_jmpr(&mut self, operands: operands::R) {
-        let offset = self.get_r_offset(operands);
-        self.jump_relative(offset);
+        self.pc = self.registers[operands.src].into_i64();
     }
 
     fn op_callr(&mut self, operands: operands::R) {
-        let offset = self.get_r_offset(operands);
         self.save_pc();
-        self.jump_relative(offset);
+        self.pc = self.registers[operands.src].into_i64();
     }
 
     #[allow(clippy::unused_self)]
@@ -312,10 +310,10 @@ impl<'a> VM<'a> {
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn get_branch_selector(&self, operands: operands::Branch) -> Trit {
+    #[allow(clippy::cast_sign_loss)]
+    fn branch_selector(&self, operands: operands::Branch) -> Trit {
         let src = self.registers[operands.src];
         let raw_index = TRIT4_TO_I8[operands.index as usize];
-        #[allow(clippy::cast_sign_loss)]
         let i = (raw_index + TRIT3_POS_OFFSET) as usize;
         src.trit(i)
     }
@@ -328,50 +326,107 @@ impl<'a> VM<'a> {
 
         let i = selector.into_index();
         let offset = jump_table[i];
-        self.jump_relative(offset);
+        self.pc += i64::from(offset);
     }
 
-    fn load<const N: usize>(&mut self, operands: operands::Memory) {
-        let i = self.get_memory_addr(operands);
-        let trytes = &self.memory[i..][..N];
+    fn load<const N: usize>(&mut self, operands: operands::Memory) -> Result<()> {
+        let addr = self.memory_op_addr(operands);
+        let range = self.memory_range(addr, N, N)?;
+        let trytes = &self.memory[range];
         let src = TInt::<N>::try_from(trytes).unwrap();
 
         self.registers[operands.dest] = src.resize();
         self.registers[registers::ZERO] = T24::ZERO;
+        Ok(())
     }
 
-    fn store<const N: usize>(&mut self, operands: operands::Memory) {
-        let src = self.registers[operands.src];
-        let i = self.get_memory_addr(operands);
-        let trytes = &mut self.memory[i..][..N];
-
+    fn store<const N: usize>(&mut self, operands: operands::Memory) -> Result<()> {
+        let addr = self.memory_op_addr(operands);
+        let range = self.memory_range(addr, N, N)?;
+        let trytes = &mut self.memory[range];
         let dest: &mut [Tryte; N] = trytes.try_into().unwrap();
+
+        let src = self.registers[operands.src];
         *dest = src.resize().into_trytes();
+        Ok(())
     }
 
-    #[allow(clippy::cast_sign_loss)]
-    fn get_memory_addr(&mut self, operands: operands::Memory) -> usize {
-        let base_addr: i32 = self.registers[operands.dest].try_into_int().unwrap();
-        let offset: i32 = operands.offset.try_into_int().unwrap();
-        (base_addr + offset) as usize
+    fn memory_op_addr(&mut self, operands: operands::Memory) -> i64 {
+        let base_addr = self.registers[operands.dest].into_i64();
+        let offset = operands.offset.into_i64();
+        base_addr + offset
     }
 
-    fn get_r_offset(&self, operands: operands::R) -> i32 {
-        let offset_src = &self.registers[operands.src];
-        offset_src.try_into_int().unwrap()
+    pub fn memory_range(&self, addr: i64, size: usize, align: usize) -> Result<Range<usize>> {
+        let size_i64 = i64::try_from(size).unwrap();
+        let align_i64 = i64::try_from(align).unwrap();
+
+        if addr % align_i64 != 0 {
+            return Err(Error::InvalidAlignment(addr, align));
+        }
+
+        let addr_bounds = self.addr_bounds();
+        let addr_end = addr + size_i64;
+        if !addr_bounds.contains(&addr) || !addr_bounds.contains(&(addr_end - 1)) {
+            return Err(Error::InvalidAddress(addr));
+        }
+
+        let index_start = usize::try_from(addr - addr_bounds.start).unwrap();
+        let index_end = index_start + size;
+        Ok(index_start..index_end)
+    }
+
+    fn addr_bounds(&self) -> Range<i64> {
+        let memory_size = self.memory.len();
+        let offset = i64::try_from(memory_size / 2).unwrap();
+        (-offset)..offset
     }
 
     fn save_pc(&mut self) {
-        let value = T24::try_from_int(i64::from(self.pc)).unwrap();
+        let value = T24::try_from_int(self.pc).unwrap();
         self.registers[registers::RA] = value;
     }
+}
 
-    fn jump_relative(&mut self, offset: i32) {
-        self.pc = self.relative_pc(offset);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn memory_range_byte() {
+        let vm = VM::new(2);
+        assert_eq!(0..1, vm.memory_range(-1, 1, 1).unwrap());
+        assert_eq!(1..2, vm.memory_range(0, 1, 1).unwrap());
+
+        assert!(vm.memory_range(-2, 1, 1).is_err());
+        assert!(vm.memory_range(1, 1, 1).is_err());
     }
 
-    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-    fn relative_pc(&self, offset: i32) -> u32 {
-        (self.pc as i32 + offset) as u32
+    #[test]
+    fn memory_range_half() {
+        let vm = VM::new(4);
+        assert_eq!(0..2, vm.memory_range(-2, 2, 2).unwrap());
+        assert_eq!(2..4, vm.memory_range(0, 2, 2).unwrap());
+
+        assert!(vm.memory_range(-3, 4, 4).is_err());
+        assert!(vm.memory_range(-1, 4, 4).is_err());
+        assert!(vm.memory_range(1, 4, 4).is_err());
+        assert!(vm.memory_range(2, 4, 4).is_err());
+    }
+
+    #[test]
+    fn memory_range_word() {
+        let vm = VM::new(8);
+        assert_eq!(0..4, vm.memory_range(-4, 4, 4).unwrap());
+        assert_eq!(4..8, vm.memory_range(0, 4, 4).unwrap());
+
+        assert!(vm.memory_range(-5, 4, 4).is_err());
+        assert!(vm.memory_range(-3, 4, 4).is_err());
+        assert!(vm.memory_range(-2, 4, 4).is_err());
+        assert!(vm.memory_range(-1, 4, 4).is_err());
+        assert!(vm.memory_range(1, 4, 4).is_err());
+        assert!(vm.memory_range(2, 4, 4).is_err());
+        assert!(vm.memory_range(3, 4, 4).is_err());
+        assert!(vm.memory_range(4, 4, 4).is_err());
     }
 }

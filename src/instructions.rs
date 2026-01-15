@@ -340,13 +340,13 @@ mod tests {
         );
         assert_eq!(
             Instruction::Jmp(operands::Jump {
-                offset: T24_1073741824,
+                addr: T24_1073741824,
             }),
             instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "1001")).unwrap()
         );
         assert_eq!(
             Instruction::Call(operands::Jump {
-                offset: T24_1073741824,
+                addr: T24_1073741824,
             }),
             instruction_from_trit_str(concat!("10T10T11110T1T0T0T01", "101T")).unwrap()
         );

@@ -1,9 +1,11 @@
+use std::ops::RangeInclusive;
+
 use ternary::tables::TRIT4_TO_I8;
 
 use crate::error::{Error, Result};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Opcode(u8);
+pub struct Opcode(i8);
 
 pub const AND: Opcode = Opcode(0);
 pub const OR: Opcode = Opcode(1);
@@ -40,11 +42,12 @@ pub const CALLR: Opcode = Opcode(31);
 pub const SYSCALL: Opcode = Opcode(32);
 pub const BREAK: Opcode = Opcode(33);
 
+pub const VALID_OPCODE_RANGE: RangeInclusive<i8> = AND.0..=BREAK.0;
+
 impl Opcode {
-    #[allow(clippy::cast_sign_loss)]
     pub fn from_trit4(trit4: u8) -> Result<Self> {
-        let index = TRIT4_TO_I8[trit4 as usize] as u8;
-        if index > BREAK.0 {
+        let index = TRIT4_TO_I8[trit4 as usize];
+        if !VALID_OPCODE_RANGE.contains(&index) {
             return Err(Error::InvalidOpcode(index));
         }
 

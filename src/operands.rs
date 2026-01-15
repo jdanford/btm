@@ -167,12 +167,12 @@ impl Operand for Branch {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Jump {
-    pub offset: T24,
+    pub addr: T24,
 }
 
 impl Operand for Jump {
     fn from_word(word: T24) -> Result<Self> {
-        let offset = word >> 4;
-        Ok(Self { offset })
+        let addr = word >> 4;
+        Ok(Self { addr })
     }
 }
