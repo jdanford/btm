@@ -2,8 +2,8 @@
 pub enum Error {
     InvalidOpcode(i8),
     InvalidRegister(i8),
-    InvalidAddress(i64),
-    InvalidAlignment(i64, usize),
+    InvalidAddress(i32),
+    InvalidAlignment(i32, usize),
     Ternary(ternary::Error),
 }
 

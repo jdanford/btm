@@ -1,3 +1,5 @@
+#![allow(clippy::upper_case_acronyms)]
+
 use std::convert::{TryFrom, TryInto};
 
 use ternary::{T12, T24, Trit, Tryte, tryte};

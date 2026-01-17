@@ -12,14 +12,14 @@ const TRIT3_POS_OFFSET: i8 = 13;
 
 pub struct VM {
     running: bool,
-    pc: i64,
+    pc: i32,
     registers: Registers,
     memory: Vec<Tryte>,
 }
 
 impl VM {
-    pub fn new(memory_size: usize) -> Self {
-        let memory = vec![Tryte::ZERO; memory_size];
+    pub fn new(memory_size: u32) -> Self {
+        let memory = vec![Tryte::ZERO; memory_size as usize];
 
         VM {
             running: false,
@@ -29,7 +29,7 @@ impl VM {
         }
     }
 
-    pub fn run(&mut self, pc: i64) -> Result<()> {
+    pub fn run(&mut self, pc: i32) -> Result<()> {
         self.pc = pc;
         self.running = true;
 
@@ -253,21 +253,21 @@ impl VM {
     }
 
     fn op_jmp(&mut self, operands: operands::Jump) {
-        self.pc = operands.addr.into_i64();
+        self.pc = operands.addr.try_into_int().unwrap();
     }
 
     fn op_call(&mut self, operands: operands::Jump) {
         self.save_pc();
-        self.pc = operands.addr.into_i64();
+        self.pc = operands.addr.try_into_int().unwrap();
     }
 
     fn op_jmpr(&mut self, operands: operands::R) {
-        self.pc = self.registers[operands.src].into_i64();
+        self.pc = self.registers[operands.src].try_into_int().unwrap();
     }
 
     fn op_callr(&mut self, operands: operands::R) {
         self.save_pc();
-        self.pc = self.registers[operands.src].into_i64();
+        self.pc = self.registers[operands.src].try_into_int().unwrap();
     }
 
     #[allow(clippy::unused_self)]
@@ -326,7 +326,7 @@ impl VM {
 
         let i = selector.into_index();
         let offset = jump_table[i];
-        self.pc += i64::from(offset);
+        self.pc += offset;
     }
 
     fn load<const N: usize>(&mut self, operands: operands::Memory) -> Result<()> {
@@ -351,22 +351,22 @@ impl VM {
         Ok(())
     }
 
-    fn memory_op_addr(&mut self, operands: operands::Memory) -> i64 {
-        let base_addr = self.registers[operands.dest].into_i64();
-        let offset = operands.offset.into_i64();
+    fn memory_op_addr(&mut self, operands: operands::Memory) -> i32 {
+        let base_addr: i32 = self.registers[operands.dest].try_into_int().unwrap();
+        let offset: i32 = operands.offset.try_into_int().unwrap();
         base_addr + offset
     }
 
-    pub fn memory_range(&self, addr: i64, size: usize, align: usize) -> Result<Range<usize>> {
-        let size_i64 = i64::try_from(size).unwrap();
-        let align_i64 = i64::try_from(align).unwrap();
+    pub fn memory_range(&self, addr: i32, size: usize, align: usize) -> Result<Range<usize>> {
+        let size_i32 = i32::try_from(size).unwrap();
+        let align_i32 = i32::try_from(align).unwrap();
 
-        if addr % align_i64 != 0 {
+        if addr % align_i32 != 0 {
             return Err(Error::InvalidAlignment(addr, align));
         }
 
         let addr_bounds = self.addr_bounds();
-        let addr_end = addr + size_i64;
+        let addr_end = addr + size_i32;
         if !addr_bounds.contains(&addr) || !addr_bounds.contains(&(addr_end - 1)) {
             return Err(Error::InvalidAddress(addr));
         }
@@ -376,9 +376,9 @@ impl VM {
         Ok(index_start..index_end)
     }
 
-    fn addr_bounds(&self) -> Range<i64> {
+    fn addr_bounds(&self) -> Range<i32> {
         let memory_size = self.memory.len();
-        let offset = i64::try_from(memory_size / 2).unwrap();
+        let offset = i32::try_from(memory_size / 2).unwrap();
         (-offset)..offset
     }
 

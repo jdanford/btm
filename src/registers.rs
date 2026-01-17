@@ -1,5 +1,3 @@
-#![feature(generic_const_exprs)]
-
 use std::ops::{Index, IndexMut, RangeInclusive};
 
 use ternary::{T24, Tryte, tables::TRIT4_TO_I8, tryte};

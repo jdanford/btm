@@ -1,5 +1,4 @@
 #![deny(clippy::all, clippy::pedantic)]
-#![allow(clippy::upper_case_acronyms)]
 #![allow(unused)] // necessary until there are binaries
 
 mod error;
