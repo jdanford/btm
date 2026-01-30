@@ -2,7 +2,7 @@
 #![allow(unused)] // necessary until there are binaries
 
 mod error;
-mod instructions;
+mod inst;
 mod opcodes;
 mod operands;
 mod registers;

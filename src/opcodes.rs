@@ -35,12 +35,13 @@ pub const B1: Opcode = Opcode(24);
 pub const BT0: Opcode = Opcode(25);
 pub const BT1: Opcode = Opcode(26);
 pub const B01: Opcode = Opcode(27);
-pub const JMP: Opcode = Opcode(28);
-pub const CALL: Opcode = Opcode(29);
-pub const JMPR: Opcode = Opcode(30);
-pub const CALLR: Opcode = Opcode(31);
-pub const SYSCALL: Opcode = Opcode(32);
-pub const BREAK: Opcode = Opcode(33);
+pub const BAL: Opcode = Opcode(28);
+pub const J: Opcode = Opcode(29);
+pub const JAL: Opcode = Opcode(30);
+pub const JR: Opcode = Opcode(31);
+pub const JALR: Opcode = Opcode(32);
+pub const SYSCALL: Opcode = Opcode(33);
+pub const BREAK: Opcode = Opcode(34);
 
 pub const VALID_OPCODE_RANGE: RangeInclusive<i8> = AND.0..=BREAK.0;
 
@@ -89,12 +90,13 @@ mod tests {
         assert_eq!(BT0, Opcode::from_trit4(0b01_00_11_01).unwrap());
         assert_eq!(BT1, Opcode::from_trit4(0b01_00_00_11).unwrap());
         assert_eq!(B01, Opcode::from_trit4(0b01_00_00_00).unwrap());
-        assert_eq!(JMP, Opcode::from_trit4(0b01_00_00_01).unwrap());
-        assert_eq!(CALL, Opcode::from_trit4(0b01_00_01_11).unwrap());
-        assert_eq!(JMPR, Opcode::from_trit4(0b01_00_01_00).unwrap());
-        assert_eq!(CALLR, Opcode::from_trit4(0b01_00_01_01).unwrap());
-        assert_eq!(SYSCALL, Opcode::from_trit4(0b01_01_11_11).unwrap());
-        assert_eq!(BREAK, Opcode::from_trit4(0b01_01_11_00).unwrap());
+        assert_eq!(BAL, Opcode::from_trit4(0b01_00_00_01).unwrap());
+        assert_eq!(J, Opcode::from_trit4(0b01_00_01_11).unwrap());
+        assert_eq!(JAL, Opcode::from_trit4(0b01_00_01_00).unwrap());
+        assert_eq!(JR, Opcode::from_trit4(0b01_00_01_01).unwrap());
+        assert_eq!(JALR, Opcode::from_trit4(0b01_01_11_11).unwrap());
+        assert_eq!(SYSCALL, Opcode::from_trit4(0b01_01_11_00).unwrap());
+        assert_eq!(BREAK, Opcode::from_trit4(0b01_01_11_01).unwrap());
 
         assert!(Opcode::from_trit4(0b00_00_00_11).is_err());
         assert!(Opcode::from_trit4(0b01_01_00_00).is_err());

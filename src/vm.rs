@@ -4,7 +4,7 @@ use ternary::trit::{_0, _1, _T};
 use ternary::{T12, T24, T48, TInt, Trit, Tryte, tables::TRIT4_TO_I8, trit, tryte};
 
 use crate::error::{Error, Result};
-use crate::instructions::Instruction;
+use crate::inst::Inst;
 use crate::operands;
 use crate::registers::{self, Register, Registers};
 
@@ -43,52 +43,53 @@ impl VM {
     fn step(&mut self) -> Result<()> {
         let instruction = self.next_instruction()?;
         match instruction {
-            Instruction::And(operands) => self.op_and(operands),
-            Instruction::Or(operands) => self.op_or(operands),
-            Instruction::Tmul(operands) => self.op_tmul(operands),
-            Instruction::Tcmp(operands) => self.op_tcmp(operands),
-            Instruction::Cmp(operands) => self.op_cmp(operands),
-            Instruction::Shf(operands) => self.op_shf(operands),
-            Instruction::Add(operands) => self.op_add(operands),
-            Instruction::Mul(operands) => self.op_mul(operands),
-            Instruction::Div(operands) => self.op_div(operands),
-            Instruction::Andi(operands) => self.op_andi(operands),
-            Instruction::Ori(operands) => self.op_ori(operands),
-            Instruction::Tmuli(operands) => self.op_tmuli(operands),
-            Instruction::Tcmpi(operands) => self.op_tcmpi(operands),
-            Instruction::Shfi(operands) => self.op_shfi(operands),
-            Instruction::Addi(operands) => self.op_addi(operands),
-            Instruction::Lui(operands) => self.op_lui(operands),
-            Instruction::Lt(operands) => self.op_lt(operands),
-            Instruction::Lh(operands) => self.op_lh(operands),
-            Instruction::Lw(operands) => self.op_lw(operands),
-            Instruction::St(operands) => self.op_st(operands),
-            Instruction::Sh(operands) => self.op_sh(operands),
-            Instruction::Sw(operands) => self.op_sw(operands),
-            Instruction::BT(operands) => self.op_bt(operands),
-            Instruction::B0(operands) => self.op_b0(operands),
-            Instruction::B1(operands) => self.op_b1(operands),
-            Instruction::BT0(operands) => self.op_bt0(operands),
-            Instruction::BT1(operands) => self.op_bt1(operands),
-            Instruction::B01(operands) => self.op_b01(operands),
-            Instruction::Jmp(operands) => self.op_jmp(operands),
-            Instruction::Call(operands) => self.op_call(operands),
-            Instruction::Jmpr(operands) => self.op_jmpr(operands),
-            Instruction::Callr(operands) => self.op_callr(operands),
-            Instruction::Syscall => self.op_syscall(),
-            Instruction::Break => self.op_break(),
+            Inst::And(operands) => self.op_and(operands),
+            Inst::Or(operands) => self.op_or(operands),
+            Inst::Tmul(operands) => self.op_tmul(operands),
+            Inst::Tcmp(operands) => self.op_tcmp(operands),
+            Inst::Cmp(operands) => self.op_cmp(operands),
+            Inst::Shf(operands) => self.op_shf(operands),
+            Inst::Add(operands) => self.op_add(operands),
+            Inst::Mul(operands) => self.op_mul(operands),
+            Inst::Div(operands) => self.op_div(operands),
+            Inst::Andi(operands) => self.op_andi(operands),
+            Inst::Ori(operands) => self.op_ori(operands),
+            Inst::Tmuli(operands) => self.op_tmuli(operands),
+            Inst::Tcmpi(operands) => self.op_tcmpi(operands),
+            Inst::Shfi(operands) => self.op_shfi(operands),
+            Inst::Addi(operands) => self.op_addi(operands),
+            Inst::Lui(operands) => self.op_lui(operands),
+            Inst::Lt(operands) => self.op_lt(operands),
+            Inst::Lh(operands) => self.op_lh(operands),
+            Inst::Lw(operands) => self.op_lw(operands),
+            Inst::St(operands) => self.op_st(operands),
+            Inst::Sh(operands) => self.op_sh(operands),
+            Inst::Sw(operands) => self.op_sw(operands),
+            Inst::BT(operands) => self.op_bt(operands),
+            Inst::B0(operands) => self.op_b0(operands),
+            Inst::B1(operands) => self.op_b1(operands),
+            Inst::BT0(operands) => self.op_bt0(operands),
+            Inst::BT1(operands) => self.op_bt1(operands),
+            Inst::B01(operands) => self.op_b01(operands),
+            Inst::Bal(operands) => self.op_bal(operands),
+            Inst::J(operands) => self.op_j(operands),
+            Inst::Jal(operands) => self.op_jal(operands),
+            Inst::Jr(operands) => self.op_jr(operands),
+            Inst::Jalr(operands) => self.op_jalr(operands),
+            Inst::Syscall(_) => self.op_syscall(),
+            Inst::Break(_) => self.op_break(),
         }
 
         Ok(())
     }
 
-    fn next_instruction(&mut self) -> Result<Instruction> {
+    fn next_instruction(&mut self) -> Result<Inst> {
         let range = self.memory_range(self.pc, 4, 4)?;
         self.pc += 4;
 
         let trytes = &self.memory[range];
         let word = T24::try_from(trytes).unwrap();
-        Instruction::from_word(word)
+        Inst::from_word(word)
     }
 
     fn op_and(&mut self, operands: operands::RRR) {
@@ -151,12 +152,12 @@ impl VM {
         let rhs = self.registers[operands.rhs];
         let (quotient, remainder) = lhs.div_rem(rhs);
 
-        self.registers[registers::HI] = quotient;
-        self.registers[registers::LO] = remainder;
+        self.registers[registers::LO] = quotient;
+        self.registers[registers::HI] = remainder;
     }
 
     fn op_andi(&mut self, operands: operands::RRI) {
-        self.simple_rri(operands, |r, i| r + i.resize());
+        self.simple_rri(operands, |r, i| r & i.resize());
     }
 
     fn op_ori(&mut self, operands: operands::RRI) {
@@ -192,80 +193,86 @@ impl VM {
         self.registers[registers::ZERO] = T24::ZERO;
     }
 
-    fn op_lt(&mut self, operands: operands::Memory) {
+    fn op_lt(&mut self, operands: operands::RRO) {
         self.load::<1>(operands);
     }
 
-    fn op_lh(&mut self, operands: operands::Memory) {
+    fn op_lh(&mut self, operands: operands::RRO) {
         self.load::<2>(operands);
     }
 
-    fn op_lw(&mut self, operands: operands::Memory) {
+    fn op_lw(&mut self, operands: operands::RRO) {
         self.load::<4>(operands);
     }
 
-    fn op_st(&mut self, operands: operands::Memory) {
+    fn op_st(&mut self, operands: operands::RRO) {
         self.store::<1>(operands);
     }
 
-    fn op_sh(&mut self, operands: operands::Memory) {
+    fn op_sh(&mut self, operands: operands::RRO) {
         self.store::<2>(operands);
     }
 
-    fn op_sw(&mut self, operands: operands::Memory) {
+    fn op_sw(&mut self, operands: operands::RRO) {
         self.store::<4>(operands);
     }
 
-    fn op_bt(&mut self, operands: operands::Branch) {
+    fn op_bt(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, 0);
     }
 
-    fn op_b0(&mut self, operands: operands::Branch) {
+    fn op_b0(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, 0);
     }
 
-    fn op_b1(&mut self, operands: operands::Branch) {
+    fn op_b1(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, 0, offset);
     }
 
-    fn op_bt0(&mut self, operands: operands::Branch) {
+    fn op_bt0(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, offset, 0);
     }
 
-    fn op_bt1(&mut self, operands: operands::Branch) {
+    fn op_bt1(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, offset, 0, offset);
     }
 
-    fn op_b01(&mut self, operands: operands::Branch) {
+    fn op_b01(&mut self, operands: operands::RO) {
         let selector = self.branch_selector(operands);
         let offset = operands.offset.try_into_int().unwrap();
         self.branch(selector, 0, offset, offset);
     }
 
-    fn op_jmp(&mut self, operands: operands::Jump) {
+    fn op_bal(&mut self, operands: operands::O) {
+        let offset: i32 = operands.offset.try_into_int().unwrap();
+        self.save_pc();
+        self.pc += offset;
+    }
+
+    fn op_j(&mut self, operands: operands::A) {
         self.pc = operands.addr.try_into_int().unwrap();
     }
 
-    fn op_call(&mut self, operands: operands::Jump) {
+    fn op_jal(&mut self, operands: operands::A) {
         self.save_pc();
         self.pc = operands.addr.try_into_int().unwrap();
     }
 
-    fn op_jmpr(&mut self, operands: operands::R) {
+    fn op_jr(&mut self, operands: operands::R) {
         self.pc = self.registers[operands.src].try_into_int().unwrap();
     }
 
-    fn op_callr(&mut self, operands: operands::R) {
+    fn op_jalr(&mut self, operands: operands::R) {
         self.save_pc();
         self.pc = self.registers[operands.src].try_into_int().unwrap();
     }
@@ -311,11 +318,9 @@ impl VM {
     }
 
     #[allow(clippy::cast_sign_loss)]
-    fn branch_selector(&self, operands: operands::Branch) -> Trit {
+    fn branch_selector(&self, operands: operands::RO) -> Trit {
         let src = self.registers[operands.src];
-        let raw_index = TRIT4_TO_I8[operands.index as usize];
-        let i = (raw_index + TRIT3_POS_OFFSET) as usize;
-        src.trit(i)
+        src.trit(0)
     }
 
     fn branch(&mut self, selector: Trit, offset_t: i32, offset_0: i32, offset_1: i32) {
@@ -329,7 +334,7 @@ impl VM {
         self.pc += offset;
     }
 
-    fn load<const N: usize>(&mut self, operands: operands::Memory) -> Result<()> {
+    fn load<const N: usize>(&mut self, operands: operands::RRO) -> Result<()> {
         let addr = self.memory_op_addr(operands);
         let range = self.memory_range(addr, N, N)?;
         let trytes = &self.memory[range];
@@ -340,7 +345,7 @@ impl VM {
         Ok(())
     }
 
-    fn store<const N: usize>(&mut self, operands: operands::Memory) -> Result<()> {
+    fn store<const N: usize>(&mut self, operands: operands::RRO) -> Result<()> {
         let addr = self.memory_op_addr(operands);
         let range = self.memory_range(addr, N, N)?;
         let trytes = &mut self.memory[range];
@@ -351,7 +356,7 @@ impl VM {
         Ok(())
     }
 
-    fn memory_op_addr(&mut self, operands: operands::Memory) -> i32 {
+    fn memory_op_addr(&mut self, operands: operands::RRO) -> i32 {
         let base_addr: i32 = self.registers[operands.dest].try_into_int().unwrap();
         let offset: i32 = operands.offset.try_into_int().unwrap();
         base_addr + offset
@@ -393,7 +398,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn memory_range_byte() {
+    fn memory_range_tryte() {
         let vm = VM::new(2);
         assert_eq!(0..1, vm.memory_range(-1, 1, 1).unwrap());
         assert_eq!(1..2, vm.memory_range(0, 1, 1).unwrap());

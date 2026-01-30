@@ -123,13 +123,13 @@ impl Operand for RRI {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Memory {
+pub struct RRO {
     pub dest: Register,
     pub src: Register,
     pub offset: T12,
 }
 
-impl Operand for Memory {
+impl Operand for RRO {
     fn from_word(word: T24) -> Result<Self> {
         let (lo, offset) = word.t12_pair();
         let (_, trit4_dest, trit4_src) = lo.trit4_triple();
@@ -142,37 +142,41 @@ impl Operand for Memory {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Branch {
+pub struct RO {
     pub src: Register,
-    pub index: u8,
-    pub hint: Trit,
-    pub offset: T12,
+    pub offset: T24,
 }
 
-impl Operand for Branch {
+impl Operand for RO {
     fn from_word(word: T24) -> Result<Self> {
-        let (lo, offset) = word.t12_pair();
-        let (_, trit4_src, trit4_index_and_hint) = lo.trit4_triple();
+        let (lo, _) = word.t12_pair();
+        let offset = word >> 8;
 
+        let (_, trit4_src, _) = lo.trit4_triple();
         let src = Register::from_trit4(trit4_src)?;
-        let index = (trit4_index_and_hint & tryte::HYTE_BITMASK);
-        let hint = Trit::try_from_trit4(trit4_index_and_hint >> 6)?;
 
-        Ok(Self {
-            src,
-            index,
-            hint,
-            offset,
-        })
+        Ok(Self { src, offset })
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Jump {
+pub struct O {
+    pub offset: T24,
+}
+
+impl Operand for O {
+    fn from_word(word: T24) -> Result<Self> {
+        let offset = word >> 8;
+        Ok(Self { offset })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct A {
     pub addr: T24,
 }
 
-impl Operand for Jump {
+impl Operand for A {
     fn from_word(word: T24) -> Result<Self> {
         let addr = word >> 4;
         Ok(Self { addr })
